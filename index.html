@@ -7,21 +7,16 @@
 
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="script.js" defer></script>
 </head>
 <body>
 
   <!-- Logo + 名言 -->
   <header class="hero">
     <svg viewBox="0 0 120 120" class="logo" aria-label="Site Logo">
-      <!-- 外圈 -->
       <circle cx="60" cy="60" r="55" fill="none" stroke="currentColor" stroke-width="8"/>
-      <!-- 斜 X -->
       <line x1="30" y1="30" x2="90" y2="90" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
-      <!-- G 三段弧 -->
       <path d="M60 27a33 33 0 1 1 0 66" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
       <path d="M60 51a9 9 0 1 1 0 18" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
     </svg>
@@ -30,10 +25,10 @@
 
   <!-- 導覽 -->
   <nav>
-    <button onclick="show('finance')">財務</button>
-    <button onclick="show('kol')">KOL</button>
-    <button onclick="show('stock')">庫存</button>
-    <button onclick="show('order')">訂單</button>
+    <button id="btn-finance" onclick="show('finance')">財務</button>
+    <button id="btn-kol" onclick="show('kol')">KOL</button>
+    <button id="btn-stock" onclick="show('stock')">庫存</button>
+    <button id="btn-order" onclick="show('order')">訂單</button>
   </nav>
 
   <!-- ========= 財務 ========= -->
@@ -87,6 +82,8 @@
       </tr>
     </table>
   </section>
-<script type="module" src="script.js"></script>
+
+  <!-- 載入主程式 -->
+  <script type="module" src="script.js"></script>
 </body>
 </html>
