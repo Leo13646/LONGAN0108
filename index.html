@@ -1,27 +1,46 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>E-Sale v12</title>
+  <title>E‑Sale v12</title>
 
-  <!-- Google Fonts -->
+  <!-- 字型 -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 
+  <!-- 核心樣式 -->
   <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Chart.js v3 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1"></script>
+
+  <!-- Firebase compat CDN -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script>
+    /* ==== 你的專案設定 ==== */
+    const firebaseConfig = {
+      apiKey: "AIzaSyA_t-Yfmxfy8uAqGgQMb3AZarNrzYocByM",
+      authDomain: "longan-aef50.firebaseapp.com",
+      projectId: "longan-aef50",
+      storageBucket: "longan-aef50.appspot.com",
+      messagingSenderId: "632631753622",
+      appId: "1:632631753622:web:395d077de61b86f9053bb7"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
+
+  <!-- 主功能 -->
   <script src="script.js" defer></script>
 </head>
-<body>
 
+<body>
   <!-- Logo + 名言 -->
   <header class="hero">
     <svg viewBox="0 0 120 120" class="logo" aria-label="Site Logo">
-      <!-- 外圈 -->
       <circle cx="60" cy="60" r="55" fill="none" stroke="currentColor" stroke-width="8"/>
-      <!-- 斜 X -->
       <line x1="30" y1="30" x2="90" y2="90" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
-      <!-- G 三段弧 -->
       <path d="M60 27a33 33 0 1 1 0 66" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
       <path d="M60 51a9 9 0 1 1 0 18" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
     </svg>
@@ -47,7 +66,6 @@
       <label>營運支出<input id="opsCost" type="number" oninput="debouncedCalc()"/></label>
       <label>淨利 <span id="netProfit">0</span></label>
     </div>
-
     <div class="charts">
       <canvas id="pie"  width="330" height="300"></canvas>
       <canvas id="line" width="330" height="300"></canvas>
@@ -87,6 +105,5 @@
       </tr>
     </table>
   </section>
-
 </body>
 </html>
