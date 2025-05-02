@@ -40,8 +40,19 @@ window.addEventListener("DOMContentLoaded", () => {
 /* ---------- 其他功能略（與你原本的一樣） ---------- */
 // 若你要我把完整 js 整段貼上來，我也可以幫你補齊後面
 /* ---------- 公開給 HTML 用 ---------- */
+/* ---------- 啟動 ---------- */
+window.addEventListener("DOMContentLoaded", ()=>{
+  loadFin(); loadHist();
+  loadTable("kol",   addKolRow,   "kolTable");
+  loadTable("stock", addStockRow, "stockTable");
+  loadTable("order", addOrderRow, "orderTable");
+  show("finance");
+});
+
+/* ---------- 公開給 HTML 使用 ---------- */
 window.show = show;
 window.addKolRow = addKolRow;
 window.addStockRow = addStockRow;
 window.addOrderRow = addOrderRow;
 window.debouncedCalc = debouncedCalc;
+
