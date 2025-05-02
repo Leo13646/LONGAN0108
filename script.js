@@ -1,49 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyA_t-Yfmxfy8uAqGgQMb3AZarNrzYocByM",
-  authDomain: "longan-aef50.firebaseapp.com",
-  projectId: "longan-aef50",
-  storageBucket: "longan-aef50.firebasestorage.app",
-  messagingSenderId: "632631753622",
-  appId: "1:632631753622:web:395d077de61b86f9053bb7",
-  measurementId: "G-MLN3B4NZ83"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-const analytics = getAnalytics(app);
-let uid = null;
-
-signInAnonymously(auth).then(() => {
-  onAuthStateChanged(auth, user => {
-    if (user) {
-      uid = user.uid;
-      startApp();
-    }
-  });
-});
-
-/* 快捷 */
-const $ = q => document.querySelector(q);
-const $$ = q => document.querySelectorAll(q);
-const id = i => document.getElementById(i);
-
-/* 分頁切換 */
-function show(t) {
-  $$(".tab").forEach(e => e.style.display = "none");
-  id(t).style.display = "block";
-  if (t === "kol" && id("kolTable").rows.length === 1) addKolRow();
-  if (t === "stock" && id("stockTable").rows.length === 1) addStockRow();
-  if (t === "order" && id("orderTable").rows.length === 1) addOrderRow();
-}
-
-/* 財務 */
-const keys = ["capital", "income", "sellCost", "prCost", "kolCost", "opsCost"];
+psCost"];
 
 const loadFin = async () => {
   const snap = await getDoc(doc(db, "users", uid, "data", "finance"));
@@ -74,7 +29,6 @@ function rebuildCharts(arr, profit) {
     },
     options: { animation: false, plugins: { legend: { labels: { color: "#ccc" } } } }
   });
-
   const today = new Date().toLocaleDateString();
   if (!hist.length || hist.at(-1).x !== today) {
     hist.push({ x: today, y: profit });
@@ -95,7 +49,8 @@ function calc() {
   saveFin();
   rebuildCharts([n("sellCost"), n("prCost"), n("kolCost"), n("opsCost")], p);
 }
-/* 雲端表格儲存 */
+
+/* 表格儲存 */
 const saveTable = async (k, tid) => {
   const rows = [...id(tid).rows].slice(1).map(r =>
     [...r.querySelectorAll("input,select")].map(e => e.value)
@@ -108,7 +63,64 @@ const loadTable = async (k, add) => {
   const rows = snap.exists() ? snap.data().rows : [];
   rows.forEach(add);
 };
+const saveFin = async () => {
+  const d = Object.fromEntries(keys.map(k => [k, id(k).value]));
+  await setDoc(doc(db, "users", uid, "data", "finance"), d);
+};
 
+let pie, line, hist = [];
+
+const loadHist = () => {
+  onSnapshot(doc(db, "users", uid, "data", "history"), snap => {
+    hist = snap.exists() ? snap.data().list || [] : [];
+    drawLine();
+  });
+};
+
+function rebuildCharts(arr, profit) {
+  pie?.destroy();
+  pie = new Chart(id("pie"), {
+    type: "pie",
+    data: {
+      labels: ["銷售", "公關", "KOL", "營運"],
+      datasets: [{ data: arr, backgroundColor: ["#333", "#555", "#777", "#999"] }]
+    },
+    options: { animation: false, plugins: { legend: { labels: { color: "#ccc" } } } }
+  });
+  const today = new Date().toLocaleDateString();
+  if (!hist.length || hist.at(-1).x !== today) {
+    hist.push({ x: today, y: profit });
+    setDoc(doc(db, "users", uid, "data", "history"), { list: hist });
+  }
+}
+
+let t;
+function debouncedCalc() {
+  clearTimeout(t);
+  t = setTimeout(calc, 150);
+}
+
+function calc() {
+  const n = k => +id(k).value || 0;
+  const p = n("income") - n("sellCost") - n("prCost") - n("kolCost") - n("opsCost");
+  id("netProfit").textContent = p.toFixed(0);
+  saveFin();
+  rebuildCharts([n("sellCost"), n("prCost"), n("kolCost"), n("opsCost")], p);
+}
+
+/* Firebase 表格儲存與載入 */
+const saveTable = async (k, tid) => {
+  const rows = [...id(tid).rows].slice(1).map(r =>
+    [...r.querySelectorAll("input,select")].map(e => e.value)
+  );
+  await setDoc(doc(db, "users", uid, "tables", k), { rows });
+};
+
+const loadTable = async (k, add) => {
+  const snap = await getDoc(doc(db, "users", uid, "tables", k));
+  const rows = snap.exists() ? snap.data().rows : [];
+  rows.forEach(add);
+};
 /* KOL 管理 */
 function addKolRow(d = null) {
   const st = ["未寄出", "已寄出"];
@@ -194,7 +206,8 @@ function addOrderRow(d = null) {
   r.addEventListener("input", () => saveTable("order", "orderTable"));
   r.addEventListener("change", () => saveTable("order", "orderTable"));
 }
-/* 啟動入口 */
+
+/* 啟動初始化 */
 async function startApp() {
   await loadFin();
   calc();
@@ -208,20 +221,18 @@ async function startApp() {
   show("finance");
 }
 
-/* 小工具元件 */
+/* 小元件 */
 const input = (isNum = false, val = "") => {
   const e = document.createElement("input");
   if (isNum) e.type = "number";
   e.value = val;
   return e;
 };
-
 const sel = opts => {
   const s = document.createElement("select");
   opts.forEach(o => s.add(new Option(o, o)));
   return s;
 };
-
 const btn = handler => {
   const b = document.createElement("button");
   b.textContent = "🗑";
