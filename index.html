@@ -1,89 +1,89 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>E-Sale v12</title>
-
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>共享資料儀表板</title>
   <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+  <!-- 財務資料區塊 -->
+  <div id="finance" class="section">
+    <h2>財務資料</h2>
+    <form id="finance-form">
+      <label>類別：
+        <input type="text" id="finance-category" required />
+      </label>
+      <label>金額：
+        <input type="number" id="finance-amount" required />
+      </label>
+      <button type="submit" id="finance-add-btn">新增</button>
+      <button type="button" id="finance-update-btn" style="display:none;">更新</button>
+      <button type="button" id="finance-cancel-btn" style="display:none;">取消</button>
+    </form>
+    <!-- 財務圖表 -->
+    <canvas id="financeChart" width="400" height="200"></canvas>
+    <!-- 財務資料清單 -->
+    <ul id="finance-list"></ul>
+  </div>
 
-  <!-- Logo + 名言 -->
-  <header class="hero">
-    <svg viewBox="0 0 120 120" class="logo" aria-label="Site Logo">
-      <circle cx="60" cy="60" r="55" fill="none" stroke="currentColor" stroke-width="8"/>
-      <line x1="30" y1="30" x2="90" y2="90" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
-      <path d="M60 27a33 33 0 1 1 0 66" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
-      <path d="M60 51a9 9 0 1 1 0 18" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
-    </svg>
-    <p class="motto">創業，就是在別人懷疑你時，你還敢繼續相信自己。</p>
-  </header>
+  <!-- KOL 資料區塊 -->
+  <div id="kol" class="section">
+    <h2>KOL</h2>
+    <form id="kol-form">
+      <label>名稱：
+        <input type="text" id="kol-name" required />
+      </label>
+      <button type="submit" id="kol-add-btn">新增</button>
+      <button type="button" id="kol-update-btn" style="display:none;">更新</button>
+      <button type="button" id="kol-cancel-btn" style="display:none;">取消</button>
+    </form>
+    <!-- KOL 清單 -->
+    <ul id="kol-list"></ul>
+  </div>
 
-  <!-- 導覽 -->
-  <nav>
-    <button id="btn-finance" onclick="show('finance')">財務</button>
-    <button id="btn-kol" onclick="show('kol')">KOL</button>
-    <button id="btn-stock" onclick="show('stock')">庫存</button>
-    <button id="btn-order" onclick="show('order')">訂單</button>
-  </nav>
+  <!-- 庫存資料區塊 -->
+  <div id="inventory" class="section">
+    <h2>庫存</h2>
+    <form id="inventory-form">
+      <label>品項：
+        <input type="text" id="inventory-name" required />
+      </label>
+      <label>數量：
+        <input type="number" id="inventory-quantity" required />
+      </label>
+      <button type="submit" id="inventory-add-btn">新增</button>
+      <button type="button" id="inventory-update-btn" style="display:none;">更新</button>
+      <button type="button" id="inventory-cancel-btn" style="display:none;">取消</button>
+    </form>
+    <!-- 庫存清單 -->
+    <ul id="inventory-list"></ul>
+  </div>
 
-  <!-- ========= 財務 ========= -->
-  <section id="finance" class="tab">
-    <div class="grid">
-      <label>資本<input id="capital" type="number" /></label>
-      <label>收入<input id="income" type="number" oninput="debouncedCalc()"/></label>
-      <label>銷售支出<input id="sellCost" type="number" oninput="debouncedCalc()"/></label>
-      <label>公關贈送<input id="prCost" type="number" oninput="debouncedCalc()"/></label>
-      <label>KOL 分潤<input id="kolCost" type="number" oninput="debouncedCalc()"/></label>
-      <label>營運支出<input id="opsCost" type="number" oninput="debouncedCalc()"/></label>
-      <label>淨利 <span id="netProfit">0</span></label>
-    </div>
+  <!-- 訂單資料區塊 -->
+  <div id="orders" class="section">
+    <h2>訂單</h2>
+    <form id="orders-form">
+      <label>名稱/編號：
+        <input type="text" id="orders-name" required />
+      </label>
+      <label>數量：
+        <input type="number" id="orders-quantity" required />
+      </label>
+      <button type="submit" id="orders-add-btn">新增</button>
+      <button type="button" id="orders-update-btn" style="display:none;">更新</button>
+      <button type="button" id="orders-cancel-btn" style="display:none;">取消</button>
+    </form>
+    <!-- 訂單清單 -->
+    <ul id="orders-list"></ul>
+  </div>
 
-    <div class="charts">
-      <canvas id="pie"  width="330" height="300"></canvas>
-      <canvas id="line" width="330" height="300"></canvas>
-    </div>
-  </section>
-
-  <!-- ========= KOL ========= -->
-  <section id="kol" class="tab">
-    <button onclick="addKolRow()">＋ 新增</button>
-    <table id="kolTable">
-      <tr>
-        <th>KOL</th><th>備註</th>
-        <th>單價</th><th>數量</th><th>%</th><th>金額</th>
-        <th>狀態</th><th></th>
-      </tr>
-    </table>
-  </section>
-
-  <!-- ========= 庫存 ========= -->
-  <section id="stock" class="tab">
-    <button onclick="addStockRow()">＋ 新增</button>
-    <table id="stockTable">
-      <tr>
-        <th>品名</th><th>分類</th><th>成本</th><th>數量</th>
-        <th>總成本</th><th>位置</th><th>備註</th><th></th>
-      </tr>
-    </table>
-  </section>
-
-  <!-- ========= 訂單 ========= -->
-  <section id="order" class="tab">
-    <button onclick="addOrderRow()">＋ 新增</button>
-    <table id="orderTable">
-      <tr>
-        <th>訂單編號</th><th>品名</th><th>數量</th><th>金額</th>
-        <th>狀態</th><th>日期</th><th></th>
-      </tr>
-    </table>
-  </section>
-
-  <!-- 載入主程式 -->
-  <script type="module" src="script.js"></script>
+  <!-- 引入 Chart.js 圖表庫 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- 引入 Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <!-- 引入主要腳本 -->
+  <script src="script.js"></script>
 </body>
 </html>
