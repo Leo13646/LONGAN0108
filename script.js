@@ -1,39 +1,67 @@
+//* ---------- 快捷 ---------- */
+const $ = q => document.querySelector(q);
+const $$ = q => document.querySelectorAll(q);
+const id = i => document.getElementById(i);
+
+/* ---------- Firebase 初始化 ---------- */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA_t-Yfmxfy8uAqGgQMb3AZarNrzYocByM",
+  authDomain: "longan-aef50.firebaseapp.com",
+  projectId: "longan-aef50",
+  storageBucket: "longan-aef50.appspot.com",
+  messagingSenderId: "632631753622",
+  appId: "1:632631753622:web:395d077de61b86f9053bb7",
+  measurementId: "G-MLN3B4NZ83"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* ---------- 分頁切換 ---------- */
+function show(t) {
+  $$(".tab").forEach(e => e.style.display = "none");
+  id(t).style.display = "block";
+  if (t === "kol" && id("kolTable").rows.length === 1) addKolRow();
+  if (t === "stock" && id("stockTable").rows.length === 1) addStockRow();
+  if (t === "order" && id("orderTable").rows.length === 1) addOrderRow();
+}
+
 /* ---------- 財務 ---------- */
 const keys = ["capital", "income", "sellCost", "prCost", "kolCost", "opsCost"];
 let pie, line, hist = [];
-let debounceTimer;
 
-const saveFin = () => {
+function saveFin() {
   const data = Object.fromEntries(keys.map(k => [k, id(k).value]));
   setDoc(doc(db, "finance", "fin"), data);
-};
+}
 
-const loadFin = () => {
+function loadFin() {
   onSnapshot(doc(db, "finance", "fin"), snap => {
     if (!snap.exists()) return;
-    const data = snap.data();
-    keys.forEach(k => {
-      if (document.activeElement !== id(k)) {
-        id(k).value = data[k] || "";
-      }
+    Object.entries(snap.data()).forEach(([k, v]) => {
+      if (document.activeElement !== id(k)) id(k).value = v;
     });
-    updateCharts();
+    calc();
   });
-};
+}
 
-const saveHist = () => setDoc(doc(db, "finance", "hist"), { rows: hist });
+function saveHist() {
+  setDoc(doc(db, "finance", "hist"), { rows: hist });
+}
 
-const loadHist = () => {
+function loadHist() {
   onSnapshot(doc(db, "finance", "hist"), snap => {
     hist = snap.exists() ? snap.data().rows || [] : [];
-    updateCharts();
+    rebuildCharts();
   });
-};
+}
 
-function updateCharts() {
+function rebuildCharts() {
   const n = k => +id(k).value || 0;
   const profit = n("income") - n("sellCost") - n("prCost") - n("kolCost") - n("opsCost");
-
   id("netProfit").textContent = profit.toFixed(0);
 
   pie?.destroy();
@@ -57,102 +85,24 @@ function updateCharts() {
     type: "line",
     data: {
       labels: hist.map(d => d.x),
-      datasets: [{
-        label: "淨利", data: hist.map(d => d.y),
-        borderColor: "#fff", backgroundColor: "rgba(255,255,255,0.2)", fill: true, tension: .35
-      }]
+      datasets: [{ label: "淨利", data: hist.map(d => d.y), borderColor: "#fff", backgroundColor: "rgba(255,255,255,0.2)", fill: true, tension: .35 }]
     },
     options: { animation: false, scales: { x: { ticks: { color: "#bbb" } }, y: { ticks: { color: "#bbb" } } }, plugins: { legend: { labels: { color: "#ccc" } } } }
   });
 }
 
-function debouncedCalc() {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => {
-    saveFin();
-    updateCharts();
-  }, 500);
-}
-/* ---------- 財務 ---------- */
-const keys = ["capital", "income", "sellCost", "prCost", "kolCost", "opsCost"];
-let pie, line, hist = [];
 let debounceTimer;
-
-const saveFin = () => {
-  const data = Object.fromEntries(keys.map(k => [k, id(k).value]));
-  setDoc(doc(db, "finance", "fin"), data);
-};
-
-const loadFin = () => {
-  onSnapshot(doc(db, "finance", "fin"), snap => {
-    if (!snap.exists()) return;
-    const data = snap.data();
-    keys.forEach(k => {
-      if (document.activeElement !== id(k)) {
-        id(k).value = data[k] || "";
-      }
-    });
-    updateCharts();
-  });
-};
-
-const saveHist = () => setDoc(doc(db, "finance", "hist"), { rows: hist });
-
-const loadHist = () => {
-  onSnapshot(doc(db, "finance", "hist"), snap => {
-    hist = snap.exists() ? snap.data().rows || [] : [];
-    updateCharts();
-  });
-};
-
-function updateCharts() {
-  const n = k => +id(k).value || 0;
-  const profit = n("income") - n("sellCost") - n("prCost") - n("kolCost") - n("opsCost");
-
-  id("netProfit").textContent = profit.toFixed(0);
-
-  pie?.destroy();
-  pie = new Chart(id("pie"), {
-    type: "pie",
-    data: {
-      labels: ["銷售", "公關", "KOL", "營運"],
-      datasets: [{ data: [n("sellCost"), n("prCost"), n("kolCost"), n("opsCost")], backgroundColor: ["#333", "#555", "#777", "#999"] }]
-    },
-    options: { animation: false, plugins: { legend: { labels: { color: "#ccc" } } } }
-  });
-
-  const today = new Date().toLocaleDateString();
-  if (!hist.length || hist.at(-1).x !== today) {
-    hist.push({ x: today, y: profit });
-    saveHist();
-  }
-
-  line?.destroy();
-  line = new Chart(id("line"), {
-    type: "line",
-    data: {
-      labels: hist.map(d => d.x),
-      datasets: [{
-        label: "淨利", data: hist.map(d => d.y),
-        borderColor: "#fff", backgroundColor: "rgba(255,255,255,0.2)", fill: true, tension: .35
-      }]
-    },
-    options: { animation: false, scales: { x: { ticks: { color: "#bbb" } }, y: { ticks: { color: "#bbb" } } }, plugins: { legend: { labels: { color: "#ccc" } } } }
-  });
-}
-
 function debouncedCalc() {
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
     saveFin();
-    updateCharts();
+    rebuildCharts();
   }, 500);
 }
-/* ---------- 共用表格存取 ---------- */
+
+/* ---------- 通用表格 ---------- */
 const saveTable = (key, tableId) => {
-  const rows = [...id(tableId).rows].slice(1).map(r =>
-    [...r.querySelectorAll("input,select")].map(e => e.value)
-  );
+  const rows = [...id(tableId).rows].slice(1).map(r => [...r.querySelectorAll("input,select")].map(e => e.value));
   setDoc(doc(db, "tables", key), { rows });
 };
 
@@ -165,10 +115,10 @@ const loadTable = (key, addRow, tableId) => {
   });
 };
 
-/* ---------- KOL ---------- */
+/* ---------- 各模組 ---------- */
 function addKolRow(d = null) {
-  const r = id("kolTable").insertRow();
   const st = ["未寄出", "已寄出"];
+  const r = id("kolTable").insertRow();
   for (let i = 0; i < 8; i++) {
     const c = r.insertCell();
     let el;
@@ -187,7 +137,7 @@ function sumKOL() {
   $$("#kolTable tr").forEach((r, i) => {
     if (!i) return;
     const [,, p, q, rp, amt] = r.querySelectorAll("input");
-    const v = (p.value && q.value && rp.value) ? (+p.value) * (+q.value) * (+rp.value) / 100 : (+amt.value || 0);
+    const v = (p.value && q.value && rp.value) ? (+p.value)*(+q.value)*(+rp.value)/100 : (+amt.value || 0);
     amt.value = v.toFixed(0);
     s += v;
   });
@@ -195,7 +145,6 @@ function sumKOL() {
   debouncedCalc();
 }
 
-/* ---------- STOCK ---------- */
 function addStockRow(d = null) {
   const cat = ["電子產品", "美妝", "居家", "服飾", "3C配件", "其他"];
   const r = id("stockTable").insertRow();
@@ -224,3 +173,43 @@ function sumStock() {
     r.cells[4].firstChild.value = (cost * qty).toFixed(0);
   });
 }
+
+function addOrderRow(d = null) {
+  const st = ["未出貨", "已出貨", "退貨"];
+  const r = id("orderTable").insertRow();
+  for (let i = 0; i < 7; i++) {
+    const c = r.insertCell();
+    let el;
+    if (i === 6) el = btn(() => { r.remove(); saveTable("order", "orderTable"); });
+    else if (i === 2) el = input(true, 1);
+    else if (i === 4) el = sel(st);
+    else if (i === 5) { el = input(false, new Date().toISOString().split("T")[0]); el.type = "date"; }
+    else el = input(i === 3);
+    c.appendChild(el);
+  }
+  if (d) [...r.cells].forEach((c, i) => c.firstChild.value = d[i] || "");
+  r.addEventListener("input", () => saveTable("order", "orderTable"));
+  r.addEventListener("change", () => saveTable("order", "orderTable"));
+}
+
+/* ---------- 啟動 ---------- */
+window.addEventListener("DOMContentLoaded", () => {
+  loadFin();
+  loadHist();
+  loadTable("kol", addKolRow, "kolTable");
+  loadTable("stock", addStockRow, "stockTable");
+  loadTable("order", addOrderRow, "orderTable");
+  show("finance");
+});
+
+/* ---------- 小元件 ---------- */
+const input = (n = false, v = "") => { const e = document.createElement("input"); if (n) e.type = "number"; e.value = v; return e; };
+const sel = a => { const s = document.createElement("select"); a.forEach(o => s.add(new Option(o, o))); return s; };
+const btn = f => { const b = document.createElement("button"); b.textContent = "🖑"; b.onclick = f; return b; };
+
+/* ---------- 給 HTML 用 ---------- */
+window.show = show;
+window.addKolRow = addKolRow;
+window.addStockRow = addStockRow;
+window.addOrderRow = addOrderRow;
+window.debouncedCalc = debouncedCalc;
