@@ -1,139 +1,94 @@
-/* 基本設定 */
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Noto Sans TC', 'Roboto', sans-serif;
-  background-color: #111;
-  color: #f0f0f0;
+  font-family: "Noto Sans TC", sans-serif;
+  background: #111;
+  color: #eee;
 }
 
-header {
+.hero {
   text-align: center;
-  padding: 2rem 1rem;
+  padding: 2em 1em;
+  border-bottom: 1px solid #444;
 }
 
-header .logo {
-  width: 80px;
-  height: 80px;
-  color: white;
-  margin-bottom: 1rem;
+h1 {
+  font-size: 2em;
+  margin: 0;
 }
 
-header .motto {
-  font-size: 1.2rem;
-  color: #ccc;
-  font-style: italic;
+.motto {
+  font-size: 1em;
+  color: #aaa;
 }
 
-nav {
+.form {
   display: flex;
+  gap: 0.5em;
   justify-content: center;
-  gap: 1rem;
-  background: #222;
-  padding: 1rem 0;
+  padding: 1em;
+  background: #1a1a1a;
+  border-bottom: 1px solid #444;
 }
 
-nav button {
-  background: #333;
-  color: #fff;
-  border: none;
-  padding: 0.5rem 1rem;
+input, select, button {
+  padding: 0.5em;
   border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background 0.2s;
+  border: none;
+  font-size: 1em;
+  outline: none;
 }
 
-nav button:hover {
-  background: #555;
-}
-
-.tab {
-  display: none;
-  padding: 2rem;
-  max-width: 900px;
-  margin: auto;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
-}
-
-label {
-  display: flex;
-  flex-direction: column;
-  font-size: 0.9rem;
-  color: #ddd;
-}
-
-input[type="number"] {
-  background: #1e1e1e;
-  color: #fff;
-  border: 1px solid #555;
-  border-radius: 5px;
-  padding: 0.5rem;
-  margin-top: 0.2rem;
-}
-
-canvas {
+input, select {
   background: #222;
-  border-radius: 10px;
-  padding: 1rem;
-  box-shadow: 0 0 10px #0005;
-}
-
-.charts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2rem;
-  margin-top: 2rem;
-  justify-content: center;
-}
-
-/* 財務變色文字 */
-#netProfit {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #ccc;
-}
-
-/* 資料表格樣式 */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-}
-
-th, td {
-  padding: 0.75rem;
+  color: #eee;
   border: 1px solid #444;
-  text-align: center;
-}
-
-th {
-  background: #222;
-  font-weight: 600;
-}
-
-tr:nth-child(even) {
-  background: #181818;
-}
-
-tr:hover {
-  background: #2a2a2a;
 }
 
 button {
-  background: #444;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 0.4rem 0.7rem;
+  background: #fff;
+  color: #000;
+  font-weight: bold;
   cursor: pointer;
+  transition: 0.3s;
 }
 
 button:hover {
-  background: #666;
+  background: #ddd;
+}
+
+.summary {
+  text-align: center;
+  font-size: 1.2em;
+  padding: 1em;
+}
+
+#netProfit {
+  font-weight: bold;
+}
+
+.history {
+  max-width: 600px;
+  margin: 1em auto;
+  background: #1b1b1b;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background: #333;
+}
+
+th, td {
+  padding: 0.75em;
+  text-align: center;
+}
+
+tr:nth-child(even) {
+  background: #222;
 }
