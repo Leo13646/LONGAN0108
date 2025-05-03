@@ -1,7 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// Firebase 設定
 const firebaseConfig = {
   apiKey: "AIzaSyA_t-Yfmxfy8uAqGgQMb3AZarNrzYocByM",
   authDomain: "longan-aef50.firebaseapp.com",
@@ -15,51 +14,62 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// DOM 快捷
-const id = i => document.getElementById(i);
 const keys = ["capital", "income", "sellCost", "prCost", "kolCost", "opsCost"];
 let pie, line, hist = [];
 let debounceTimer;
 
-function saveData() {
-  const data = Object.fromEntries(keys.map(k => [k, id(k).value]));
-  setDoc(doc(db, "finance", "fin"), data);
-}
+window.debouncedCalc = () => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    saveFin();
+    updateCharts();
+  }, 300);
+};
 
-function loadData() {
+const saveFin = () => {
+  const data = Object.fromEntries(keys.map(k => [k, document.getElementById(k).value]));
+  setDoc(doc(db, "finance", "fin"), data);
+};
+
+const loadFin = () => {
   onSnapshot(doc(db, "finance", "fin"), snap => {
     if (!snap.exists()) return;
     const data = snap.data();
     keys.forEach(k => {
-      if (document.activeElement !== id(k)) {
-        id(k).value = data[k] || "";
+      if (document.activeElement !== document.getElementById(k)) {
+        document.getElementById(k).value = data[k] || "";
       }
     });
     updateCharts();
   });
+};
 
+const saveHist = () => setDoc(doc(db, "finance", "hist"), { rows: hist });
+
+const loadHist = () => {
   onSnapshot(doc(db, "finance", "hist"), snap => {
     hist = snap.exists() ? snap.data().rows || [] : [];
     updateCharts();
   });
-}
-
-function saveHist() {
-  setDoc(doc(db, "finance", "hist"), { rows: hist });
-}
+};
 
 function updateCharts() {
-  const n = k => +id(k).value || 0;
+  const n = k => +document.getElementById(k).value || 0;
   const profit = n("income") - n("sellCost") - n("prCost") - n("kolCost") - n("opsCost");
 
-  id("netProfit").textContent = profit.toFixed(0);
+  const net = document.getElementById("netProfit");
+  net.textContent = profit.toFixed(0);
+  net.style.color = profit >= 0 ? "#00ff77" : "#ff5555";
 
   pie?.destroy();
-  pie = new Chart(id("pie"), {
+  pie = new Chart(document.getElementById("pie"), {
     type: "pie",
     data: {
       labels: ["銷售", "公關", "KOL", "營運"],
-      datasets: [{ data: [n("sellCost"), n("prCost"), n("kolCost"), n("opsCost")], backgroundColor: ["#333", "#555", "#777", "#999"] }]
+      datasets: [{
+        data: [n("sellCost"), n("prCost"), n("kolCost"), n("opsCost")],
+        backgroundColor: ["#333", "#555", "#777", "#999"]
+      }]
     },
     options: { animation: false, plugins: { legend: { labels: { color: "#ccc" } } } }
   });
@@ -71,24 +81,31 @@ function updateCharts() {
   }
 
   line?.destroy();
-  line = new Chart(id("line"), {
+  line = new Chart(document.getElementById("line"), {
     type: "line",
     data: {
       labels: hist.map(d => d.x),
-      datasets: [{ label: "淨利", data: hist.map(d => d.y), borderColor: "#fff", backgroundColor: "rgba(255,255,255,.2)", fill: true, tension: .35 }]
+      datasets: [{
+        label: "淨利",
+        data: hist.map(d => d.y),
+        borderColor: "#fff",
+        backgroundColor: "rgba(255,255,255,0.2)",
+        fill: true,
+        tension: 0.35
+      }]
     },
-    options: { animation: false, scales: { x: { ticks: { color: "#bbb" } }, y: { ticks: { color: "#bbb" } } }, plugins: { legend: { labels: { color: "#ccc" } } } }
+    options: {
+      animation: false,
+      scales: {
+        x: { ticks: { color: "#bbb" } },
+        y: { ticks: { color: "#bbb" } }
+      },
+      plugins: { legend: { labels: { color: "#ccc" } } }
+    }
   });
 }
 
-window.debouncedCalc = function () {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => {
-    saveData();
-    updateCharts();
-  }, 300);
-};
-
 window.addEventListener("DOMContentLoaded", () => {
-  loadData();
+  loadFin();
+  loadHist();
 });
