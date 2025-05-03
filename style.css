@@ -1,134 +1,98 @@
-/* 字體與全局設定 */
 body {
-  font-family: 'Noto Sans TC', 'Roboto', sans-serif;
-  background: #1a1a1a;
+  background-color: #111;
   color: #eee;
+  font-family: 'Noto Sans TC', sans-serif;
+  padding: 2rem;
   margin: 0;
-  padding: 0;
+  max-width: 700px;
+  margin: auto;
 }
 
-header.hero {
+h1 {
   text-align: center;
-  padding: 20px 10px;
-  background: #111;
-  border-bottom: 1px solid #333;
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
 }
 
-header.hero .logo {
-  width: 60px;
-  height: 60px;
-  margin-bottom: 10px;
-  color: #fff;
-}
-
-header.hero .motto {
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: #ccc;
-}
-
-/* 導覽按鈕 */
-nav {
+.form-row {
   display: flex;
-  justify-content: center;
-  gap: 10px;
-  padding: 10px;
-  background: #222;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
 }
 
-nav button {
-  padding: 8px 16px;
-  background: #333;
+input, select, button {
+  font-size: 1rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
   border: none;
-  border-radius: 6px;
+  outline: none;
+}
+
+input, select {
+  flex: 1 1 140px;
+  background-color: #222;
+  color: #eee;
+}
+
+button {
+  background-color: #444;
   color: #fff;
   cursor: pointer;
-  font-weight: bold;
-  transition: background 0.3s;
+  transition: background 0.2s;
 }
 
-nav button:hover {
-  background: #555;
-}
-
-.tab {
-  display: none;
-  padding: 20px;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 15px;
-  margin-bottom: 30px;
-}
-
-.grid label {
-  display: flex;
-  flex-direction: column;
-  font-size: 0.9rem;
-  color: #ccc;
-}
-
-.grid input {
-  padding: 8px;
-  margin-top: 4px;
-  border: 1px solid #444;
-  background: #222;
-  color: #fff;
-  border-radius: 4px;
+button:hover {
+  background-color: #666;
 }
 
 #netProfit {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: bold;
-  color: #0f0; /* 預設綠色 */
+  text-align: center;
+  margin: 1rem 0;
 }
 
-#netProfit.negative {
-  color: #f44;
-}
-
-.charts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  justify-content: center;
-}
-
-canvas {
-  background: #111;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
-}
-
-/* 新增按鈕 */
-button.add-record {
-  margin: 10px 0 20px;
-  background: #444;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
-button.add-record:hover {
-  background: #666;
-}
-
-/* 歷史紀錄 */
-#historyList {
-  margin-top: 20px;
+.history {
   border-top: 1px solid #444;
-  padding-top: 10px;
+  margin-top: 2rem;
 }
 
-#historyList li {
-  list-style: none;
-  margin-bottom: 5px;
-  color: #aaa;
+.entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid #333;
+}
+
+.entry span {
+  flex: 1;
+  text-align: center;
   font-size: 0.95rem;
+}
+
+.entry .amount {
+  font-weight: bold;
+}
+
+.amount.positive {
+  color: #4caf50;
+}
+
+.amount.negative {
+  color: #f44336;
+}
+
+.delete-btn {
+  background: transparent;
+  border: none;
+  color: #aaa;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.delete-btn:hover {
+  color: #fff;
 }
