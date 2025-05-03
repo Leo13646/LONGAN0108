@@ -82,7 +82,8 @@ const loadTable=(key,addRow,tableId)=>{
 };
 
 /* ---------- KOL ---------- */
-function addKolRow(d=null){const st=["未寄出","已寄出"];const r=id("kolTable").insertRow();
+function addKolRow(d=null){
+  const st=["未寄出","已寄出"];const r=id("kolTable").insertRow();
   for(let i=0;i<8;i++){const c=r.insertCell();let el;
     if(i===7){el=btn(()=>{r.remove();sumKOL();saveTable("kol","kolTable");});}
     else if(i===6){el=sel(st);}
@@ -91,13 +92,13 @@ function addKolRow(d=null){const st=["未寄出","已寄出"];const r=id("kolTab
   if(d) [...r.cells].forEach((c,i)=>c.firstChild.value=d[i]||"");
   r.addEventListener("input",()=>{sumKOL();saveTable("kol","kolTable");});
   r.addEventListener("change",()=>{sumKOL();saveTable("kol","kolTable");});
-  sumKOL();}
-function sumKOL(){let s=0;$$("#kolTable tr").forEach((r,i)=>{if(!i)return;const [,,p,q,rp,amt]=r.querySelectorAll("input");
-  const v=(p.value&&q.value&&rp.value)?(+p.value)*(+q.value)*(+rp.value)/100:(+amt.value||0);amt.value=v.toFixed(0);s+=v;});
-  id("kolCost").value=s.toFixed(0);debouncedCalc();}
+  sumKOL();
+  saveTable("kol", "kolTable");
+}
 
 /* ---------- STOCK ---------- */
-function addStockRow(d=null){const cat=["電子產品","美妝","居家","服飾","3C配件","其他"];const r=id("stockTable").insertRow();
+function addStockRow(d=null){
+  const cat=["電子產品","美妝","居家","服飾","3C配件","其他"];const r=id("stockTable").insertRow();
   for(let i=0;i<8;i++){const c=r.insertCell();let el;
     if(i===7){el=btn(()=>{r.remove();sumStock();saveTable("stock","stockTable");});}
     else if(i===1){el=sel(cat);}
@@ -106,12 +107,13 @@ function addStockRow(d=null){const cat=["電子產品","美妝","居家","服飾
   if(d) [...r.cells].forEach((c,i)=>c.firstChild.value=d[i]||"");
   r.addEventListener("input",()=>{sumStock();saveTable("stock","stockTable");});
   r.addEventListener("change",()=>{sumStock();saveTable("stock","stockTable");});
-  sumStock();}
-function sumStock(){$$("#stockTable tr").forEach((r,i)=>{if(!i)return;
-  const cost=+r.cells[2].firstChild.value||0,qty=+r.cells[3].firstChild.value||0;r.cells[4].firstChild.value=(cost*qty).toFixed(0);});}
+  sumStock();
+  saveTable("stock", "stockTable");
+}
 
 /* ---------- ORDER ---------- */
-function addOrderRow(d=null){const st=["未出貨","已出貨","退貨"];const r=id("orderTable").insertRow();
+function addOrderRow(d=null){
+  const st=["未出貨","已出貨","退貨"];const r=id("orderTable").insertRow();
   for(let i=0;i<7;i++){const c=r.insertCell();let el;
     if(i===6){el=btn(()=>{r.remove();saveTable("order","orderTable");});}
     else if(i===2){el=input(true,1);}
@@ -121,7 +123,9 @@ function addOrderRow(d=null){const st=["未出貨","已出貨","退貨"];const r
     c.appendChild(el);}
   if(d) [...r.cells].forEach((c,i)=>c.firstChild.value=d[i]||"");
   r.addEventListener("input",()=>saveTable("order","orderTable"));
-  r.addEventListener("change",()=>saveTable("order","orderTable"));}
+  r.addEventListener("change",()=>saveTable("order","orderTable"));
+  saveTable("order", "orderTable");
+}
 
 /* ---------- 啟動 ---------- */
 window.addEventListener("DOMContentLoaded",()=>{
