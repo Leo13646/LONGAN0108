@@ -2,47 +2,80 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>財務報表系統</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css" />
-  <script type="module" src="script.js"></script>
+  <style>
+    body {
+      background: #111;
+      color: #eee;
+      font-family: 'Noto Sans TC', sans-serif;
+      padding: 2rem;
+      max-width: 600px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    .form-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    select, input, button {
+      padding: 0.5rem;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+    input, select {
+      flex: 1;
+    }
+    button {
+      background: #555;
+      color: white;
+      cursor: pointer;
+    }
+    .history {
+      margin-top: 2rem;
+    }
+    .entry {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem;
+      border-bottom: 1px solid #444;
+    }
+    .amount.positive { color: #4caf50; }
+    .amount.negative { color: #f44336; }
+    .delete-btn {
+      background: none;
+      color: #888;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-  <header>
-    <h1>財務報表系統</h1>
-    <p class="motto">創業，就是在別人懷疑你時，你還敢繼續相信自己。</p>
-  </header>
+  <h1>財務報表</h1>
 
-  <section class="form-section">
-    <h2>新增一筆紀錄</h2>
-    <form id="entryForm">
-      <input type="text" id="desc" placeholder="描述 (收入/支出)" required />
-      <input type="number" id="amount" placeholder="金額" required />
-      <select id="type">
-        <option value="income">收入</option>
-        <option value="sellCost">銷售支出</option>
-        <option value="prCost">公關贈送</option>
-        <option value="kolCost">KOL 分潤</option>
-        <option value="opsCost">營運支出</option>
-      </select>
-      <button type="submit">＋ 新增</button>
-    </form>
-  </section>
+  <div class="form-row">
+    <select id="type">
+      <option value="收入">收入</option>
+      <option value="支出">支出</option>
+    </select>
+    <input id="desc" placeholder="項目" />
+    <input id="amt" type="number" placeholder="金額" />
+    <input id="date" type="date" />
+    <button onclick="addEntry()">新增</button>
+  </div>
 
-  <section class="summary">
-    <div>資本：<span id="capital">0</span></div>
-    <div>收入：<span id="income">0</span></div>
-    <div>銷售支出：<span id="sellCost">0</span></div>
-    <div>公關贈送：<span id="prCost">0</span></div>
-    <div>KOL 分潤：<span id="kolCost">0</span></div>
-    <div>營運支出：<span id="opsCost">0</span></div>
-    <div>淨利：<span id="netProfit">0</span></div>
-  </section>
+  <div id="netProfit" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 1rem;"></div>
 
-  <section class="charts">
-    <canvas id="pie" width="360" height="300"></canvas>
-    <canvas id="line" width="360" height="300"></canvas>
-  </section>
+  <div class="history" id="historyList"></div>
+
+  <script type="module" src="script.js"></script>
 </body>
 </html>
