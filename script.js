@@ -1,3 +1,9 @@
+/* ---------- 快捷 ---------- */
+const $ = q => document.querySelector(q);
+const $$ = q => document.querySelectorAll(q);
+const id = i => document.getElementById(i);
+
+/* ---------- Firebase 初始化 ---------- */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -14,20 +20,13 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+/* ---------- 財務邏輯 ---------- */
 const keys = ["capital", "income", "sellCost", "prCost", "kolCost", "opsCost"];
 let pie, line, hist = [];
 let debounceTimer;
 
-window.debouncedCalc = () => {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => {
-    saveFin();
-    updateCharts();
-  }, 300);
-};
-
 const saveFin = () => {
-  const data = Object.fromEntries(keys.map(k => [k, document.getElementById(k).value]));
+  const data = Object.fromEntries(keys.map(k => [k, id(k).value]));
   setDoc(doc(db, "finance", "fin"), data);
 };
 
@@ -36,8 +35,8 @@ const loadFin = () => {
     if (!snap.exists()) return;
     const data = snap.data();
     keys.forEach(k => {
-      if (document.activeElement !== document.getElementById(k)) {
-        document.getElementById(k).value = data[k] || "";
+      if (document.activeElement !== id(k)) {
+        id(k).value = data[k] || "";
       }
     });
     updateCharts();
@@ -54,22 +53,18 @@ const loadHist = () => {
 };
 
 function updateCharts() {
-  const n = k => +document.getElementById(k).value || 0;
+  const n = k => +id(k).value || 0;
   const profit = n("income") - n("sellCost") - n("prCost") - n("kolCost") - n("opsCost");
 
-  const net = document.getElementById("netProfit");
-  net.textContent = profit.toFixed(0);
-  net.style.color = profit >= 0 ? "#00ff77" : "#ff5555";
+  id("netProfit").textContent = profit.toFixed(0);
+  id("netProfit").style.color = profit >= 0 ? "#2ecc71" : "#e74c3c";
 
   pie?.destroy();
-  pie = new Chart(document.getElementById("pie"), {
+  pie = new Chart(id("pie"), {
     type: "pie",
     data: {
       labels: ["銷售", "公關", "KOL", "營運"],
-      datasets: [{
-        data: [n("sellCost"), n("prCost"), n("kolCost"), n("opsCost")],
-        backgroundColor: ["#333", "#555", "#777", "#999"]
-      }]
+      datasets: [{ data: [n("sellCost"), n("prCost"), n("kolCost"), n("opsCost")], backgroundColor: ["#333", "#555", "#777", "#999"] }]
     },
     options: { animation: false, plugins: { legend: { labels: { color: "#ccc" } } } }
   });
@@ -81,7 +76,7 @@ function updateCharts() {
   }
 
   line?.destroy();
-  line = new Chart(document.getElementById("line"), {
+  line = new Chart(id("line"), {
     type: "line",
     data: {
       labels: hist.map(d => d.x),
@@ -91,7 +86,7 @@ function updateCharts() {
         borderColor: "#fff",
         backgroundColor: "rgba(255,255,255,0.2)",
         fill: true,
-        tension: 0.35
+        tension: .35
       }]
     },
     options: {
@@ -105,7 +100,20 @@ function updateCharts() {
   });
 }
 
+function debouncedCalc() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    saveFin();
+    updateCharts();
+  }, 500);
+}
+
+/* ---------- 初始化 ---------- */
 window.addEventListener("DOMContentLoaded", () => {
   loadFin();
   loadHist();
+  updateCharts();
 });
+
+/* ---------- 開放 HTML 呼叫 ---------- */
+window.debouncedCalc = debouncedCalc;
