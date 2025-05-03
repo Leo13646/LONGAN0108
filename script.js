@@ -1,49 +1,102 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+body {
+  font-family: "Noto Sans TC", sans-serif;
+  background-color: #1c1c1c;
+  color: #f5f5f5;
+  margin: 0;
+  padding: 2rem;
+}
 
-const firebaseConfig = {
-  apiKey: "AIzaSyA_t-Yfmxfy8uAqGgQMb3AZarNrzYocByM",
-  authDomain: "longan-aef50.firebaseapp.com",
-  projectId: "longan-aef50",
-  storageBucket: "longan-aef50.appspot.com",
-  messagingSenderId: "632631753622",
-  appId: "1:632631753622:web:395d077de61b86f9053bb7",
-  measurementId: "G-MLN3B4NZ83"
-};
+h1 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const recordsRef = collection(db, "records");
+.container {
+  max-width: 720px;
+  margin: auto;
+  background-color: #2a2a2a;
+  border-radius: 20px;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+  padding: 2rem;
+}
 
-const typeInput = document.getElementById("type");
-const amountInput = document.getElementById("amount");
-const dateInput = document.getElementById("date");
-const addBtn = document.getElementById("addRecord");
-const historyTable = document.getElementById("historyTable");
-const netProfitSpan = document.getElementById("netProfit");
+form {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
 
-addBtn.onclick = async () => {
-  const type = typeInput.value.trim();
-  const amount = parseFloat(amountInput.value);
-  const date = dateInput.value;
+input, select, button {
+  padding: 0.75rem;
+  font-size: 1rem;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+}
 
-  if (!type || isNaN(amount) || !date) return alert("請輸入所有欄位");
+input, select {
+  background-color: #333;
+  color: #f5f5f5;
+  border: 1px solid #555;
+}
 
-  await addDoc(recordsRef, { type, amount, date });
-  typeInput.value = "";
-  amountInput.value = "";
-  dateInput.value = "";
-};
+button {
+  background-color: #000;
+  color: white;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s;
+}
 
-onSnapshot(recordsRef, snap => {
-  const rows = [];
-  let total = 0;
-  snap.forEach(doc => {
-    const { type, amount, date } = doc.data();
-    total += amount;
-    rows.push(`<tr><td>${type}</td><td>${amount}</td><td>${date}</td></tr>`);
-  });
-  historyTable.innerHTML = rows.join("");
-  netProfitSpan.textContent = total.toFixed(0);
-  netProfitSpan.className = total >= 0 ? "positive" : "negative";
-});
+button::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.3s ease-out;
+}
+
+button:hover::before {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.history {
+  margin-top: 2rem;
+  border-top: 1px solid #444;
+  padding-top: 1rem;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px dashed #555;
+}
+
+.history-item.income {
+  color: #3edc81;
+}
+
+.history-item.expense {
+  color: #ff6b6b;
+}
+
+.net-profit {
+  font-weight: bold;
+  font-size: 1.5rem;
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.net-profit.positive {
+  color: #3edc81;
+}
+
+.net-profit.negative {
+  color: #ff6b6b;
+}
