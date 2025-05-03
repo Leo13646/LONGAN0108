@@ -2,38 +2,37 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>財務報表</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>財務報表系統</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
-  <script type="module" src="script.js" defer></script>
 </head>
 <body>
-  <header class="hero">
-    <h1>LONGAN 財務系統</h1>
-    <p class="motto">創業，就是在別人懷疑你時，你還敢繼續相信自己。</p>
-  </header>
+  <main>
+    <h1>財務報表系統</h1>
+    <p class="quote">創業，就是在別人懷疑你時，你還敢繼續相信自己。</p>
 
-  <section class="form">
-    <select id="type">
-      <option value="income">收入</option>
-      <option value="expense">支出</option>
-    </select>
-    <input id="amount" type="number" placeholder="金額" />
-    <input id="note" type="text" placeholder="備註" />
-    <button id="addBtn">新增紀錄</button>
-  </section>
+    <section class="input-section">
+      <label>資本 <input type="number" id="capital"></label>
+      <label>收入 <input type="number" id="income"></label>
+      <label>銷售支出 <input type="number" id="sellCost"></label>
+      <label>公關贈送 <input type="number" id="prCost"></label>
+      <label>KOL 分潤 <input type="number" id="kolCost"></label>
+      <label>營運支出 <input type="number" id="opsCost"></label>
+    </section>
 
-  <section class="summary">
-    <p>目前淨利：<span id="netProfit">0</span></p>
-  </section>
+    <div class="profit-display">
+      淨利：<span id="netProfit">0</span>
+    </div>
 
-  <section class="history">
-    <table>
-      <thead>
-        <tr><th>類別</th><th>金額</th><th>備註</th></tr>
-      </thead>
-      <tbody id="history"></tbody>
-    </table>
-  </section>
+    <div class="button-row">
+      <button onclick="addRecord()">新增一筆</button>
+    </div>
+
+    <canvas id="line" width="330" height="280"></canvas>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
