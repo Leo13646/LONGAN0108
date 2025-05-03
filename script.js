@@ -1,6 +1,6 @@
-// Firebase + 財務報表：改為記錄每一筆收入/支出的明細
+// Firebase 初始化
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA_t-Yfmxfy8uAqGgQMb3AZarNrzYocByM",
@@ -11,72 +11,47 @@ const firebaseConfig = {
   appId: "1:632631753622:web:395d077de61b86f9053bb7",
   measurementId: "G-MLN3B4NZ83"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const entriesRef = collection(db, "finance_entries");
 
+// 快捷
 const $ = q => document.querySelector(q);
-const $$ = q => document.querySelectorAll(q);
+const id = i => document.getElementById(i);
 
-const addEntry = async (type) => {
-  const table = document.getElementById("logTable");
-  const row = table.insertRow();
-
-  const descCell = row.insertCell();
-  const amountCell = row.insertCell();
-  const typeCell = row.insertCell();
-  const dateCell = row.insertCell();
-
-  const descInput = document.createElement("input");
-  const amountInput = document.createElement("input");
-  amountInput.type = "number";
-  const typeSpan = document.createElement("span");
-  typeSpan.textContent = type === "income" ? "收入" : "支出";
-  const dateInput = document.createElement("input");
-  dateInput.type = "date";
-  dateInput.value = new Date().toISOString().split("T")[0];
-
-  descCell.appendChild(descInput);
-  amountCell.appendChild(amountInput);
-  typeCell.appendChild(typeSpan);
-  dateCell.appendChild(dateInput);
-
-  // 自動儲存這筆紀錄
-  row.addEventListener("change", async () => {
-    const record = {
-      desc: descInput.value,
-      amount: +amountInput.value,
-      type,
-      date: dateInput.value,
-      createdAt: Date.now()
-    };
-    await addDoc(collection(db, "records"), record);
+// 新增紀錄
+id("addBtn").onclick = async () => {
+  const type = id("type").value;
+  const amount = +id("amount").value;
+  const note = id("note").value;
+  if (!amount || isNaN(amount)) return alert("請輸入正確金額");
+  await addDoc(entriesRef, {
+    type,
+    amount,
+    note,
+    time: serverTimestamp()
   });
+  id("amount").value = "";
+  id("note").value = "";
 };
 
-const loadEntries = () => {
-  const table = document.getElementById("logTable");
-  onSnapshot(collection(db, "records"), snap => {
-    while (table.rows.length > 1) table.deleteRow(1);
-    let profit = 0;
-    snap.forEach(doc => {
-      const d = doc.data();
-      const row = table.insertRow();
-      row.insertCell().textContent = d.desc;
-      row.insertCell().textContent = d.amount;
-      row.insertCell().textContent = d.type === "income" ? "收入" : "支出";
-      row.insertCell().textContent = d.date;
-      if (d.type === "income") profit += d.amount;
-      else profit -= d.amount;
-    });
-    const np = document.getElementById("netProfit");
-    np.textContent = profit;
-    np.style.color = profit >= 0 ? "#0f0" : "#f33";
+// 即時同步
+onSnapshot(entriesRef, snap => {
+  const tbody = id("history");
+  tbody.innerHTML = "";
+  let total = 0;
+  snap.forEach(doc => {
+    const d = doc.data();
+    const tr = document.createElement("tr");
+    const amt = d.type === "income" ? d.amount : -d.amount;
+    total += amt;
+    tr.innerHTML = `
+      <td>${d.type === "income" ? "收入" : "支出"}</td>
+      <td>${d.amount}</td>
+      <td>${d.note || ""}</td>
+    `;
+    tr.style.color = d.type === "income" ? "#3c6" : "#c44";
+    tbody.appendChild(tr);
   });
-};
-
-window.addEventListener("DOMContentLoaded", () => {
-  $(`#addIncome`).onclick = () => addEntry("income");
-  $(`#addExpense`).onclick = () => addEntry("expense");
-  loadEntries();
+  id("netProfit").textContent = total.toFixed(0);
 });
