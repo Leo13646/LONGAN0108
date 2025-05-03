@@ -1,11 +1,6 @@
-/* ---------- 快捷 ---------- */
-const $ = q => document.querySelector(q);
-const $$ = q => document.querySelectorAll(q);
-const id = i => document.getElementById(i);
-
-/* ---------- Firebase 初始化 ---------- */
+// Firebase + 財務報表：改為記錄每一筆收入/支出的明細
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA_t-Yfmxfy8uAqGgQMb3AZarNrzYocByM",
@@ -20,100 +15,68 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ---------- 財務邏輯 ---------- */
-const keys = ["capital", "income", "sellCost", "prCost", "kolCost", "opsCost"];
-let pie, line, hist = [];
-let debounceTimer;
+const $ = q => document.querySelector(q);
+const $$ = q => document.querySelectorAll(q);
 
-const saveFin = () => {
-  const data = Object.fromEntries(keys.map(k => [k, id(k).value]));
-  setDoc(doc(db, "finance", "fin"), data);
+const addEntry = async (type) => {
+  const table = document.getElementById("logTable");
+  const row = table.insertRow();
+
+  const descCell = row.insertCell();
+  const amountCell = row.insertCell();
+  const typeCell = row.insertCell();
+  const dateCell = row.insertCell();
+
+  const descInput = document.createElement("input");
+  const amountInput = document.createElement("input");
+  amountInput.type = "number";
+  const typeSpan = document.createElement("span");
+  typeSpan.textContent = type === "income" ? "收入" : "支出";
+  const dateInput = document.createElement("input");
+  dateInput.type = "date";
+  dateInput.value = new Date().toISOString().split("T")[0];
+
+  descCell.appendChild(descInput);
+  amountCell.appendChild(amountInput);
+  typeCell.appendChild(typeSpan);
+  dateCell.appendChild(dateInput);
+
+  // 自動儲存這筆紀錄
+  row.addEventListener("change", async () => {
+    const record = {
+      desc: descInput.value,
+      amount: +amountInput.value,
+      type,
+      date: dateInput.value,
+      createdAt: Date.now()
+    };
+    await addDoc(collection(db, "records"), record);
+  });
 };
 
-const loadFin = () => {
-  onSnapshot(doc(db, "finance", "fin"), snap => {
-    if (!snap.exists()) return;
-    const data = snap.data();
-    keys.forEach(k => {
-      if (document.activeElement !== id(k)) {
-        id(k).value = data[k] || "";
-      }
+const loadEntries = () => {
+  const table = document.getElementById("logTable");
+  onSnapshot(collection(db, "records"), snap => {
+    while (table.rows.length > 1) table.deleteRow(1);
+    let profit = 0;
+    snap.forEach(doc => {
+      const d = doc.data();
+      const row = table.insertRow();
+      row.insertCell().textContent = d.desc;
+      row.insertCell().textContent = d.amount;
+      row.insertCell().textContent = d.type === "income" ? "收入" : "支出";
+      row.insertCell().textContent = d.date;
+      if (d.type === "income") profit += d.amount;
+      else profit -= d.amount;
     });
-    updateCharts();
+    const np = document.getElementById("netProfit");
+    np.textContent = profit;
+    np.style.color = profit >= 0 ? "#0f0" : "#f33";
   });
 };
 
-const saveHist = () => setDoc(doc(db, "finance", "hist"), { rows: hist });
-
-const loadHist = () => {
-  onSnapshot(doc(db, "finance", "hist"), snap => {
-    hist = snap.exists() ? snap.data().rows || [] : [];
-    updateCharts();
-  });
-};
-
-function updateCharts() {
-  const n = k => +id(k).value || 0;
-  const profit = n("income") - n("sellCost") - n("prCost") - n("kolCost") - n("opsCost");
-
-  id("netProfit").textContent = profit.toFixed(0);
-  id("netProfit").style.color = profit >= 0 ? "#2ecc71" : "#e74c3c";
-
-  pie?.destroy();
-  pie = new Chart(id("pie"), {
-    type: "pie",
-    data: {
-      labels: ["銷售", "公關", "KOL", "營運"],
-      datasets: [{ data: [n("sellCost"), n("prCost"), n("kolCost"), n("opsCost")], backgroundColor: ["#333", "#555", "#777", "#999"] }]
-    },
-    options: { animation: false, plugins: { legend: { labels: { color: "#ccc" } } } }
-  });
-
-  const today = new Date().toLocaleDateString();
-  if (!hist.length || hist.at(-1).x !== today) {
-    hist.push({ x: today, y: profit });
-    saveHist();
-  }
-
-  line?.destroy();
-  line = new Chart(id("line"), {
-    type: "line",
-    data: {
-      labels: hist.map(d => d.x),
-      datasets: [{
-        label: "淨利",
-        data: hist.map(d => d.y),
-        borderColor: "#fff",
-        backgroundColor: "rgba(255,255,255,0.2)",
-        fill: true,
-        tension: .35
-      }]
-    },
-    options: {
-      animation: false,
-      scales: {
-        x: { ticks: { color: "#bbb" } },
-        y: { ticks: { color: "#bbb" } }
-      },
-      plugins: { legend: { labels: { color: "#ccc" } } }
-    }
-  });
-}
-
-function debouncedCalc() {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => {
-    saveFin();
-    updateCharts();
-  }, 500);
-}
-
-/* ---------- 初始化 ---------- */
 window.addEventListener("DOMContentLoaded", () => {
-  loadFin();
-  loadHist();
-  updateCharts();
+  $(`#addIncome`).onclick = () => addEntry("income");
+  $(`#addExpense`).onclick = () => addEntry("expense");
+  loadEntries();
 });
-
-/* ---------- 開放 HTML 呼叫 ---------- */
-window.debouncedCalc = debouncedCalc;
