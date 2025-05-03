@@ -3,7 +3,7 @@ const $=q=>document.querySelector(q), $$=q=>document.querySelectorAll(q), id=i=>
 
 /* ---------- Firebase 初始化 ---------- */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA_t-Yfmxfy8uAqGgQMb3AZarNrzYocByM",
@@ -18,27 +18,42 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ---------- 分頁 ---------- */
-function show(t){$$(".tab").forEach(e=>e.style.display="none");id(t).style.display="block";
+/* ---------- 分頁切換 ---------- */
+function show(t){
+  $$(".tab").forEach(e=>e.style.display="none");
+  id(t).style.display="block";
   if(t==="kol"  && id("kolTable").rows.length===1)   addKolRow();
   if(t==="stock"&& id("stockTable").rows.length===1) addStockRow();
-  if(t==="order"&& id("orderTable").rows.length===1) addOrderRow();}
+  if(t==="order"&& id("orderTable").rows.length===1) addOrderRow();
+}
 
-/* ---------- 財務 ---------- */
+/* ---------- 財務資料同步 ---------- */
 const keys=["capital","income","sellCost","prCost","kolCost","opsCost"];
+let isTyping=false, typingTimer;
+keys.forEach(k=>{
+  const el=id(k);
+  el.addEventListener("input",()=>{
+    isTyping=true;
+    clearTimeout(typingTimer);
+    typingTimer=setTimeout(()=>{ isTyping=false; calc(); }, 500);
+  });
+});
+
 const saveFin=_=>{
   const data = Object.fromEntries(keys.map(k=>[k,id(k).value]));
   setDoc(doc(db, "finance", "fin"), data);
 };
+
 const loadFin=_=>{
   onSnapshot(doc(db, "finance", "fin"), snap=>{
-    if(!snap.exists()) return;
+    if(!snap.exists() || isTyping) return;
     Object.entries(snap.data()).forEach(([k,v])=>{
-      if (id(k).value !== String(v)) id(k).value = v;
+      if(id(k).value !== String(v)) id(k).value = v;
     });
     calc();
   });
 };
+
 let pie,line,hist=[];
 const loadHist=_=>{
   onSnapshot(doc(db, "finance", "hist"), snap=>{
@@ -54,7 +69,7 @@ function rebuildCharts(arr,profit){
     options:{animation:false,plugins:{legend:{labels:{color:"#ccc"}}}}});
 
   const today=new Date().toLocaleDateString();
-  if(!hist.length||hist.at(-1).x!==today){
+  if(!hist.length || hist.at(-1).x!==today){
     hist.push({x:today,y:profit});
     saveHist();
   }
@@ -65,10 +80,15 @@ function rebuildCharts(arr,profit){
     options:{animation:false,scales:{x:{ticks:{color:"#bbb"}},y:{ticks:{color:"#bbb"}}},plugins:{legend:{labels:{color:"#ccc"}}}}});
 }
 let t;function debouncedCalc(){clearTimeout(t);t=setTimeout(calc,150);}
-function calc(){const n=k=>+id(k).value||0;const p=n("income")-n("sellCost")-n("prCost")-n("kolCost")-n("opsCost");
-  id("netProfit").textContent=p.toFixed(0);saveFin();rebuildCharts([n("sellCost"),n("prCost"),n("kolCost"),n("opsCost")],p);}
+function calc(){
+  const n=k=>+id(k).value||0;
+  const p=n("income")-n("sellCost")-n("prCost")-n("kolCost")-n("opsCost");
+  id("netProfit").textContent=p.toFixed(0);
+  saveFin();
+  rebuildCharts([n("sellCost"),n("prCost"),n("kolCost"),n("opsCost")],p);
+}
 
-/* ---------- Firebase 表格存取 ---------- */
+/* ---------- 通用儲存表格 ---------- */
 const saveTable=(key,tableId)=>{
   const rows = [...id(tableId).rows].slice(1).map(r=>[...r.querySelectorAll("input,select")].map(e=>e.value));
   setDoc(doc(db, "tables", key), { rows });
@@ -84,65 +104,106 @@ const loadTable=(key,addRow,tableId)=>{
 
 /* ---------- KOL ---------- */
 function addKolRow(d=null){
-  const st=["未寄出","已寄出"];const r=id("kolTable").insertRow();
-  for(let i=0;i<8;i++){const c=r.insertCell();let el;
+  const st=["未寄出","已寄出"];
+  const r=id("kolTable").insertRow();
+  for(let i=0;i<8;i++){
+    const c=r.insertCell();
+    let el;
     if(i===7){el=btn(()=>{r.remove();sumKOL();saveTable("kol","kolTable");});}
     else if(i===6){el=sel(st);}
     else{el=input([2,3,4,5].includes(i),i===4?30:"");}
-    c.appendChild(el);}
+    c.appendChild(el);
+  }
   if(d) [...r.cells].forEach((c,i)=>c.firstChild.value=d[i]||"");
   r.addEventListener("input",()=>{sumKOL();saveTable("kol","kolTable");});
   r.addEventListener("change",()=>{sumKOL();saveTable("kol","kolTable");});
-  sumKOL();
-  saveTable("kol", "kolTable");
+  sumKOL(); saveTable("kol","kolTable");
+}
+function sumKOL(){
+  let s=0;
+  $$("#kolTable tr").forEach((r,i)=>{
+    if(!i)return;
+    const [,,p,q,rp,amt]=r.querySelectorAll("input");
+    const v=(p.value&&q.value&&rp.value)?(+p.value)*(+q.value)*(+rp.value)/100:(+amt.value||0);
+    amt.value=v.toFixed(0); s+=v;
+  });
+  id("kolCost").value=s.toFixed(0);
+  debouncedCalc();
 }
 
 /* ---------- STOCK ---------- */
 function addStockRow(d=null){
-  const cat=["電子產品","美妝","居家","服飾","3C配件","其他"];const r=id("stockTable").insertRow();
-  for(let i=0;i<8;i++){const c=r.insertCell();let el;
+  const cat=["電子產品","美妝","居家","服飾","3C配件","其他"];
+  const r=id("stockTable").insertRow();
+  for(let i=0;i<8;i++){
+    const c=r.insertCell();
+    let el;
     if(i===7){el=btn(()=>{r.remove();sumStock();saveTable("stock","stockTable");});}
     else if(i===1){el=sel(cat);}
-    else{el=input([2,3,5].includes(i));if([2,3].includes(i)) el.oninput=sumStock;if(i===4){el.readOnly=true;}}
-    c.appendChild(el);}
+    else{el=input([2,3,5].includes(i)); if([2,3].includes(i)) el.oninput=sumStock; if(i===4){el.readOnly=true;}}
+    c.appendChild(el);
+  }
   if(d) [...r.cells].forEach((c,i)=>c.firstChild.value=d[i]||"");
   r.addEventListener("input",()=>{sumStock();saveTable("stock","stockTable");});
   r.addEventListener("change",()=>{sumStock();saveTable("stock","stockTable");});
-  sumStock();
-  saveTable("stock", "stockTable");
+  sumStock(); saveTable("stock","stockTable");
+}
+function sumStock(){
+  $$("#stockTable tr").forEach((r,i)=>{
+    if(!i)return;
+    const cost=+r.cells[2].firstChild.value||0,qty=+r.cells[3].firstChild.value||0;
+    r.cells[4].firstChild.value=(cost*qty).toFixed(0);
+  });
 }
 
 /* ---------- ORDER ---------- */
 function addOrderRow(d=null){
-  const st=["未出貨","已出貨","退貨"];const r=id("orderTable").insertRow();
-  for(let i=0;i<7;i++){const c=r.insertCell();let el;
+  const st=["未出貨","已出貨","退貨"];
+  const r=id("orderTable").insertRow();
+  for(let i=0;i<7;i++){
+    const c=r.insertCell();
+    let el;
     if(i===6){el=btn(()=>{r.remove();saveTable("order","orderTable");});}
     else if(i===2){el=input(true,1);}
     else if(i===4){el=sel(st);}
-    else if(i===5){el=input(false,new Date().toISOString().split("T")[0]);el.type="date";}
+    else if(i===5){el=input(false,new Date().toISOString().split("T")[0]); el.type="date";}
     else{el=input(i===3);}
-    c.appendChild(el);}
+    c.appendChild(el);
+  }
   if(d) [...r.cells].forEach((c,i)=>c.firstChild.value=d[i]||"");
   r.addEventListener("input",()=>saveTable("order","orderTable"));
   r.addEventListener("change",()=>saveTable("order","orderTable"));
-  saveTable("order", "orderTable");
+  saveTable("order","orderTable");
 }
-
-/* ---------- 啟動 ---------- */
+/* ---------- 頁面啟動 ---------- */
 window.addEventListener("DOMContentLoaded",()=>{
-  loadFin();loadHist();
-  loadTable("kol",addKolRow,"kolTable");
-  loadTable("stock",addStockRow,"stockTable");
-  loadTable("order",addOrderRow,"orderTable");
+  loadFin(); loadHist();
+  loadTable("kol", addKolRow, "kolTable");
+  loadTable("stock", addStockRow, "stockTable");
+  loadTable("order", addOrderRow, "orderTable");
   show("finance");
 });
 
 /* ---------- 小元件 ---------- */
-const input=(n=false,v="")=>{const e=document.createElement("input");if(n)e.type="number";e.value=v;return e;}
-const sel=a=>{const s=document.createElement("select");a.forEach(o=>s.add(new Option(o,o)));return s;}
-const btn=f=>{const b=document.createElement("button");b.textContent="🗑";b.onclick=f;return b;}
+const input=(n=false,v="")=>{
+  const e=document.createElement("input");
+  if(n) e.type="number";
+  e.value=v;
+  return e;
+};
+const sel=a=>{
+  const s=document.createElement("select");
+  a.forEach(o=>s.add(new Option(o,o)));
+  return s;
+};
+const btn=f=>{
+  const b=document.createElement("button");
+  b.textContent="🗑";
+  b.onclick=f;
+  return b;
+};
 
-/* ---------- 公開給 HTML 使用 ---------- */
+/* ---------- 公開函式 ---------- */
 window.show = show;
 window.addKolRow = addKolRow;
 window.addStockRow = addStockRow;
