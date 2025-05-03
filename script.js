@@ -22,134 +22,141 @@ const db = getFirestore(app);
 
 /* ---------- 分頁切換 ---------- */
 function show(tab) {
-  $$('.tab').forEach(el => el.style.display = 'none');
-  id(tab).style.display = 'block';
+  $$(".tab").forEach(e => e.style.display = "none");
+  id(tab).style.display = "block";
 }
 
-/* ---------- 財務 ---------- */
-const financeKeys = ["capital", "income", "sellCost", "prCost", "kolCost", "opsCost"];
-const saveFinance = () => {
-  const data = Object.fromEntries(financeKeys.map(k => [k, id(k).value]));
-  setDoc(doc(db, "finance", "values"), data);
-};
-const loadFinance = () => {
-  onSnapshot(doc(db, "finance", "values"), snap => {
-    if (!snap.exists()) return;
-    for (const [k, v] of Object.entries(snap.data())) {
-      id(k).value = v;
+/* ---------- 財務模組 ---------- */
+const finKeys = ["capital","income","sellCost","prCost","kolCost","opsCost"];
+const loadFin = () => {
+  onSnapshot(doc(db, "finance", "data"), snap => {
+    if (snap.exists()) {
+      const data = snap.data();
+      finKeys.forEach(k => id(k).value = data[k] || "");
+      updateFinance();
     }
-    calcNetProfit();
   });
 };
-
-function calcNetProfit() {
+const saveFin = () => {
+  const data = Object.fromEntries(finKeys.map(k => [k, id(k).value]));
+  setDoc(doc(db, "finance", "data"), data);
+};
+function updateFinance() {
   const n = k => +id(k).value || 0;
-  const net = n("income") - n("sellCost") - n("prCost") - n("kolCost") - n("opsCost");
-  id("netProfit").textContent = net.toFixed(0);
+  const profit = n("income") - n("sellCost") - n("prCost") - n("kolCost") - n("opsCost");
+  id("netProfit").textContent = profit;
 }
 
-financeKeys.forEach(k => {
-  id(k)?.addEventListener("input", () => {
-    saveFinance();
-    calcNetProfit();
+/* ---------- 表格存取 (共用) ---------- */
+function loadTable(name, tableId, addRowFn) {
+  onSnapshot(doc(db, "tables", name), snap => {
+    const data = snap.exists() ? snap.data().rows : [];
+    while (id(tableId).rows.length > 1) id(tableId).deleteRow(1);
+    if (!data.length) addRowFn();
+    else data.forEach(addRowFn);
   });
-});
-
-/* ---------- 表格 ---------- */
+}
 function saveTable(name, tableId) {
   const rows = [...id(tableId).rows].slice(1).map(r =>
-    [...r.querySelectorAll("input, select")].map(el => el.value)
+    [...r.querySelectorAll("input,select")].map(e => e.value)
   );
   setDoc(doc(db, "tables", name), { rows });
-}
-function loadTable(name, tableId, addRow) {
-  onSnapshot(doc(db, "tables", name), snap => {
-    if (!snap.exists()) return;
-    const data = snap.data().rows || [];
-    while (id(tableId).rows.length > 1) id(tableId).deleteRow(1);
-    if (data.length === 0) addRow();
-    else data.forEach(addRow);
-  });
-}
-
-function inputCell(isNumber = false, value = "") {
-  const el = document.createElement("input");
-  if (isNumber) el.type = "number";
-  el.value = value;
-  return el;
-}
-function selectCell(options, value = "") {
-  const s = document.createElement("select");
-  options.forEach(opt => s.add(new Option(opt, opt)));
-  s.value = value;
-  return s;
-}
-function deleteBtn(onClick) {
-  const btn = document.createElement("button");
-  btn.textContent = "🗑";
-  btn.onclick = onClick;
-  return btn;
 }
 
 /* ---------- KOL ---------- */
 function addKolRow(data = []) {
-  const r = id("kolTable").insertRow();
-  const st = ["未寄出", "已寄出"];
-  ["", "", "", "", "", "", "", ""].forEach((_, i) => {
-    const c = r.insertCell();
+  const row = id("kolTable").insertRow();
+  const status = ["未寄出", "已寄出"];
+  const cells = ["text", "text", "number", "number", "number", "number", "select", "button"];
+  cells.forEach((type, i) => {
+    const cell = row.insertCell();
     let el;
-    if (i === 6) el = selectCell(st, data[i]);
-    else if (i === 7) el = deleteBtn(() => { r.remove(); saveTable("kol", "kolTable"); });
-    else el = inputCell(i > 1 && i < 6, data[i] || "");
-    c.appendChild(el);
+    if (type === "select") {
+      el = sel(status);
+    } else if (type === "button") {
+      el = btn(() => { row.remove(); sumKOL(); saveTable("kol", "kolTable"); });
+    } else {
+      el = input(type === "number", data[i] || "");
+    }
+    if (data[i]) el.value = data[i];
+    cell.appendChild(el);
   });
-  r.addEventListener("input", () => saveTable("kol", "kolTable"));
-  r.addEventListener("change", () => saveTable("kol", "kolTable"));
+  row.addEventListener("input", () => { sumKOL(); saveTable("kol", "kolTable"); });
+  row.addEventListener("change", () => { sumKOL(); saveTable("kol", "kolTable"); });
+  sumKOL();
+}
+function sumKOL() {
+  let total = 0;
+  $$("#kolTable tr").forEach((r, i) => {
+    if (!i) return;
+    const [,, p, q, rp, amt] = r.querySelectorAll("input");
+    const val = (+p.value) * (+q.value) * (+rp.value) / 100;
+    amt.value = isNaN(val) ? 0 : val.toFixed(0);
+    total += +amt.value;
+  });
+  id("kolCost").value = total;
+  saveFin(); updateFinance();
 }
 
-/* ---------- STOCK ---------- */
+/* ---------- 庫存 ---------- */
 function addStockRow(data = []) {
-  const r = id("stockTable").insertRow();
-  const cat = ["電子產品", "美妝", "居家", "服飾", "3C配件", "其他"];
-  ["", "", "", "", "", "", "", ""].forEach((_, i) => {
-    const c = r.insertCell();
+  const cats = ["電子產品","美妝","居家","服飾","3C配件","其他"];
+  const row = id("stockTable").insertRow();
+  for (let i = 0; i < 8; i++) {
+    const cell = row.insertCell();
     let el;
-    if (i === 1) el = selectCell(cat, data[i]);
-    else if (i === 7) el = deleteBtn(() => { r.remove(); saveTable("stock", "stockTable"); });
-    else el = inputCell(i === 2 || i === 3 || i === 5, data[i] || "");
-    c.appendChild(el);
+    if (i === 1) el = sel(cats);
+    else if (i === 7) el = btn(() => { row.remove(); saveTable("stock", "stockTable"); });
+    else el = input([2,3,5].includes(i), data[i] || "");
+    if (i === 4) el.readOnly = true;
+    if (data[i]) el.value = data[i];
+    cell.appendChild(el);
+  }
+  row.addEventListener("input", () => { sumStock(); saveTable("stock", "stockTable"); });
+  row.addEventListener("change", () => { sumStock(); saveTable("stock", "stockTable"); });
+  sumStock();
+}
+function sumStock() {
+  $$("#stockTable tr").forEach((r, i) => {
+    if (!i) return;
+    const cost = +r.cells[2].firstChild.value || 0;
+    const qty = +r.cells[3].firstChild.value || 0;
+    r.cells[4].firstChild.value = (cost * qty).toFixed(0);
   });
-  r.addEventListener("input", () => saveTable("stock", "stockTable"));
-  r.addEventListener("change", () => saveTable("stock", "stockTable"));
 }
 
-/* ---------- ORDER ---------- */
+/* ---------- 訂單 ---------- */
 function addOrderRow(data = []) {
-  const r = id("orderTable").insertRow();
   const st = ["未出貨", "已出貨", "退貨"];
-  ["", "", "", "", "", "", ""].forEach((_, i) => {
-    const c = r.insertCell();
+  const row = id("orderTable").insertRow();
+  for (let i = 0; i < 7; i++) {
+    const cell = row.insertCell();
     let el;
-    if (i === 4) el = selectCell(st, data[i]);
-    else if (i === 5) { el = inputCell(false, data[i] || new Date().toISOString().split("T")[0]); el.type = "date"; }
-    else if (i === 6) el = deleteBtn(() => { r.remove(); saveTable("order", "orderTable"); });
-    else el = inputCell(i === 2 || i === 3, data[i] || "");
-    c.appendChild(el);
-  });
-  r.addEventListener("input", () => saveTable("order", "orderTable"));
-  r.addEventListener("change", () => saveTable("order", "orderTable"));
+    if (i === 4) el = sel(st);
+    else if (i === 6) el = btn(() => { row.remove(); saveTable("order", "orderTable"); });
+    else el = input(i === 2 || i === 3, data[i] || "");
+    if (i === 5) el.type = "date";
+    cell.appendChild(el);
+  }
+  row.addEventListener("input", () => saveTable("order", "orderTable"));
+  row.addEventListener("change", () => saveTable("order", "orderTable"));
 }
+
+/* ---------- 小元件 ---------- */
+const input = (num = false, v = "") => { const e = document.createElement("input"); if (num) e.type = "number"; e.value = v; return e; };
+const sel = arr => { const s = document.createElement("select"); arr.forEach(opt => s.add(new Option(opt, opt))); return s; };
+const btn = f => { const b = document.createElement("button"); b.textContent = "🗑"; b.onclick = f; return b; };
 
 /* ---------- 啟動 ---------- */
 window.addEventListener("DOMContentLoaded", () => {
   show("finance");
-  loadFinance();
+  loadFin(); loadHist();
   loadTable("kol", addKolRow, "kolTable");
   loadTable("stock", addStockRow, "stockTable");
   loadTable("order", addOrderRow, "orderTable");
 });
 
-/* ---------- 導出 ---------- */
+/* ---------- 公開 ---------- */
 window.show = show;
 window.addKolRow = addKolRow;
 window.addStockRow = addStockRow;
