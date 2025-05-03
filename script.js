@@ -1,54 +1,45 @@
-/* ---------- 快捷 ---------- */
-const $ = q => document.querySelector(q);
-const $$ = q => document.querySelectorAll(q);
-const id = i => document.getElementById(i);
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>財務報表</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="script.js" defer></script>
+</head>
+<body>
+  <header class="hero">
+    <h1>財務報表</h1>
+    <p class="motto">創業，就是在別人懷疑你時，你還敢繼續相信自己。</p>
+  </header>
 
-/* ---------- Firebase 初始化 ---------- */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+  <main class="container">
+    <form id="entryForm">
+      <select id="type">
+        <option value="income">收入</option>
+        <option value="sellCost">銷售支出</option>
+        <option value="prCost">公關贈送</option>
+        <option value="kolCost">KOL 分潤</option>
+        <option value="opsCost">營運支出</option>
+      </select>
+      <input type="number" id="amount" placeholder="金額" required>
+      <button type="submit">新增一筆</button>
+    </form>
 
-const firebaseConfig = {
-  apiKey: "AIzaSyA_t-Yfmxfy8uAqGgQMb3AZarNrzYocByM",
-  authDomain: "longan-aef50.firebaseapp.com",
-  projectId: "longan-aef50",
-  storageBucket: "longan-aef50.appspot.com",
-  messagingSenderId: "632631753622",
-  appId: "1:632631753622:web:395d077de61b86f9053bb7"
-};
+    <section class="summary">
+      <p>總資本：<span id="capital">0</span></p>
+      <p>總清別：<span id="netProfit">0</span></p>
+    </section>
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+    <section class="charts">
+      <canvas id="pie"></canvas>
+      <canvas id="line"></canvas>
+    </section>
 
-/* ---------- 功能 ---------- */
-const form = id("recordForm");
-const table = id("recordTable");
-const totalDisplay = id("netProfit");
-
-form.addEventListener("submit", async e => {
-  e.preventDefault();
-  const data = Object.fromEntries(new FormData(form));
-  data.timestamp = serverTimestamp();
-  data.amount = parseInt(data.amount);
-  data.type = data.type || "收入";
-  await addDoc(collection(db, "records"), data);
-  form.reset();
-});
-
-onSnapshot(collection(db, "records"), snap => {
-  let total = 0;
-  table.innerHTML = "";
-  snap.forEach(doc => {
-    const d = doc.data();
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${d.category || "--"}</td>
-      <td>${d.type}</td>
-      <td class="amt" style="color:${d.amount>=0?'#0f0':'#f44'}">${d.amount}</td>
-      <td>${d.note || ""}</td>
-    `;
-    table.appendChild(row);
-    total += d.amount;
-  });
-  totalDisplay.textContent = total;
-  totalDisplay.style.color = total >= 0 ? "#0f0" : "#f44";
-});
+    <section class="history">
+      <h2>歷史紀錄</h2>
+      <ul id="historyList"></ul>
+    </section>
+  </main>
+</body>
+</html>
