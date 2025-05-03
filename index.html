@@ -1,29 +1,42 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>E-Sale 一頁式系統</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>E-Sale</title>
   <style>
-    body { font-family: 'Noto Sans TC', sans-serif; margin: 0; background: #121212; color: #eee; }
-    header { text-align: center; padding: 1em; background: #1f1f1f; }
-    nav { display: flex; justify-content: center; background: #222; }
-    nav button { margin: 0.5em; padding: 0.5em 1em; background: #333; color: #fff; border: none; cursor: pointer; }
-    nav button:hover { background: #555; }
-    section { display: none; padding: 1em; }
-    section.active { display: block; }
-    table { width: 100%; border-collapse: collapse; margin-top: 1em; }
-    th, td { border: 1px solid #444; padding: 0.5em; text-align: center; }
-    input, select { width: 90%; background: #1f1f1f; color: #fff; border: 1px solid #555; }
-    canvas { margin-top: 1em; background: #1f1f1f; border-radius: 6px; }
+    body {
+      background: #111; color: #eee; font-family: 'Noto Sans TC', sans-serif;
+      margin: 0; padding: 1rem; line-height: 1.6;
+    }
+    header { text-align: center; margin-bottom: 1rem; }
+    nav { text-align: center; margin-bottom: 1rem; }
+    nav button {
+      margin: 0 .25rem; padding: .5rem 1rem;
+      background: #222; border: none; color: #eee; cursor: pointer;
+    }
+    .tab { display: none; }
+    .tab.active { display: block; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: .5rem; margin-bottom: 1rem; }
+    label { display: flex; flex-direction: column; }
+    input, select, button {
+      padding: .25rem; background: #222; border: 1px solid #555; color: #eee;
+    }
+    table {
+      width: 100%; border-collapse: collapse; margin-top: 1rem; color: #eee;
+    }
+    th, td {
+      border: 1px solid #333; padding: .5rem; text-align: center;
+    }
+    canvas { background: #222; margin-top: 1rem; }
   </style>
 </head>
 <body>
   <header>
-    <h1>E-Sale 管理系統</h1>
-    <p>一頁式四大模組：財務、KOL、庫存、訂單</p>
+    <h1>E-Sale 系統</h1>
+    <p>跨裝置儲存｜即時同步｜簡潔一頁式</p>
   </header>
+
   <nav>
     <button onclick="show('finance')">財務</button>
     <button onclick="show('kol')">KOL</button>
@@ -32,40 +45,41 @@
   </nav>
 
   <section id="finance" class="tab active">
-    <div>
-      <label>資本 <input id="capital" type="number" /></label>
-      <label>收入 <input id="income" type="number" oninput="debouncedCalc()" /></label>
-      <label>銷售支出 <input id="sellCost" type="number" oninput="debouncedCalc()" /></label>
-      <label>公關贈送 <input id="prCost" type="number" oninput="debouncedCalc()" /></label>
-      <label>KOL 分潤 <input id="kolCost" type="number" oninput="debouncedCalc()" /></label>
-      <label>營運支出 <input id="opsCost" type="number" oninput="debouncedCalc()" /></label>
+    <div class="grid">
+      <label>資本<input id="capital" type="number"></label>
+      <label>收入<input id="income" type="number" oninput="debouncedCalc()"></label>
+      <label>銷售支出<input id="sellCost" type="number" oninput="debouncedCalc()"></label>
+      <label>公關贈送<input id="prCost" type="number" oninput="debouncedCalc()"></label>
+      <label>KOL 分潤<input id="kolCost" type="number" oninput="debouncedCalc()"></label>
+      <label>營運支出<input id="opsCost" type="number" oninput="debouncedCalc()"></label>
       <label>淨利 <span id="netProfit">0</span></label>
     </div>
-    <canvas id="pie" width="320" height="260"></canvas>
-    <canvas id="line" width="320" height="260"></canvas>
+    <canvas id="pie" width="330" height="300"></canvas>
+    <canvas id="line" width="330" height="300"></canvas>
   </section>
 
   <section id="kol" class="tab">
-    <button onclick="addKolRow()">＋ 新增 KOL</button>
+    <button onclick="addKolRow()">＋ 新增</button>
     <table id="kolTable">
       <tr><th>KOL</th><th>備註</th><th>單價</th><th>數量</th><th>%</th><th>金額</th><th>狀態</th><th></th></tr>
     </table>
   </section>
 
   <section id="stock" class="tab">
-    <button onclick="addStockRow()">＋ 新增商品</button>
+    <button onclick="addStockRow()">＋ 新增</button>
     <table id="stockTable">
       <tr><th>品名</th><th>分類</th><th>成本</th><th>數量</th><th>總成本</th><th>位置</th><th>備註</th><th></th></tr>
     </table>
   </section>
 
   <section id="order" class="tab">
-    <button onclick="addOrderRow()">＋ 新增訂單</button>
+    <button onclick="addOrderRow()">＋ 新增</button>
     <table id="orderTable">
       <tr><th>訂單編號</th><th>品名</th><th>數量</th><th>金額</th><th>狀態</th><th>日期</th><th></th></tr>
     </table>
   </section>
 
-  <script type="module" src="script.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module" src="./script.js"></script>
 </body>
 </html>
