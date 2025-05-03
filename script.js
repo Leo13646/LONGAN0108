@@ -92,3 +92,9 @@ window.addEventListener("DOMContentLoaded",()=>{
 const input=(n=false,v="")=>{const e=document.createElement("input");if(n)e.type="number";e.value=v;return e;}
 const sel=a=>{const s=document.createElement("select");a.forEach(o=>s.add(new Option(o,o)));return s;}
 const btn=f=>{const b=document.createElement("button");b.textContent="🗑";b.onclick=f;return b;}
+/* ---------- 公開給 HTML 使用 ---------- */
+window.show = show;
+window.addKolRow = addKolRow;
+window.addStockRow = addStockRow;
+window.addOrderRow = addOrderRow;
+window.debouncedCalc = debouncedCalc;
