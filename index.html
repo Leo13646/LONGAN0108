@@ -1,81 +1,29 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>財務報表系統</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
-  <style>
-    body {
-      background: #111;
-      color: #eee;
-      font-family: 'Noto Sans TC', sans-serif;
-      padding: 2rem;
-      max-width: 600px;
-      margin: auto;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-    .form-row {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
-    }
-    select, input, button {
-      padding: 0.5rem;
-      border: none;
-      border-radius: 5px;
-      font-size: 1rem;
-    }
-    input, select {
-      flex: 1;
-    }
-    button {
-      background: #555;
-      color: white;
-      cursor: pointer;
-    }
-    .history {
-      margin-top: 2rem;
-    }
-    .entry {
-      display: flex;
-      justify-content: space-between;
-      padding: 0.5rem;
-      border-bottom: 1px solid #444;
-    }
-    .amount.positive { color: #4caf50; }
-    .amount.negative { color: #f44336; }
-    .delete-btn {
-      background: none;
-      color: #888;
-      border: none;
-      font-size: 1.2rem;
-      cursor: pointer;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="script.js" defer></script>
 </head>
 <body>
-  <h1>財務報表</h1>
+  <div class="container">
+    <h1>財務報表</h1>
 
-  <div class="form-row">
-    <select id="type">
-      <option value="收入">收入</option>
-      <option value="支出">支出</option>
-    </select>
-    <input id="desc" placeholder="項目" />
-    <input id="amt" type="number" placeholder="金額" />
-    <input id="date" type="date" />
-    <button onclick="addEntry()">新增</button>
+    <div class="input-row">
+      <select id="type">
+        <option value="income">收入</option>
+        <option value="expense">支出</option>
+      </select>
+      <input type="number" id="amount" placeholder="金額" />
+      <input type="date" id="date" />
+      <button id="addBtn">新增一筆</button>
+    </div>
+
+    <div id="netProfit" class="profit-display">淨利：0</div>
+
+    <ul id="historyList" class="history"></ul>
   </div>
-
-  <div id="netProfit" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 1rem;"></div>
-
-  <div class="history" id="historyList"></div>
-
-  <script type="module" src="script.js"></script>
 </body>
 </html>
