@@ -1,44 +1,37 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>財務報表</title>
-
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700&display=swap" rel="stylesheet">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Noto Sans TC', sans-serif; }
-    body { background: #1e1e1e; color: #f5f5f5; padding: 2rem; display: flex; flex-direction: column; align-items: center; }
-    h1 { font-size: 1.5rem; margin-bottom: 1rem; text-align: center; color: #00ffd5; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; width: 100%; max-width: 900px; }
-    label { display: flex; flex-direction: column; font-size: 0.9rem; }
-    input { padding: 0.5rem; border-radius: 5px; border: none; background: #2c2c2c; color: #fff; }
-    .net-profit { font-size: 1.25rem; font-weight: bold; margin-top: 0.5rem; }
-    .charts { display: flex; flex-wrap: wrap; justify-content: center; gap: 2rem; }
-    canvas { background: #2c2c2c; padding: 1rem; border-radius: 10px; }
-  </style>
-
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script type="module" src="script.js"></script>
+  <script type="module" src="script.js" defer></script>
 </head>
 <body>
+  <header>
+    <h1>財務報表系統</h1>
+    <p class="motto">創業，就是在別人懷疑你時，你還敢繼續相信自己。</p>
+  </header>
 
-  <h1>創業，就是在別人懷疑你時，你還敢繼續相信自己。</h1>
+  <main>
+    <section class="form-grid">
+      <label>資本<input type="number" id="capital"></label>
+      <label>收入<input type="number" id="income" oninput="debouncedCalc()"></label>
+      <label>銷售支出<input type="number" id="sellCost" oninput="debouncedCalc()"></label>
+      <label>公關贈送<input type="number" id="prCost" oninput="debouncedCalc()"></label>
+      <label>KOL 分潤<input type="number" id="kolCost" oninput="debouncedCalc()"></label>
+      <label>營運支出<input type="number" id="opsCost" oninput="debouncedCalc()"></label>
+      <div class="net-profit">
+        <span>淨利：</span><span id="netProfit">0</span>
+      </div>
+    </section>
 
-  <section class="grid">
-    <label>資本<input id="capital" type="number" /></label>
-    <label>收入<input id="income" type="number" oninput="debouncedCalc()"/></label>
-    <label>銷售支出<input id="sellCost" type="number" oninput="debouncedCalc()"/></label>
-    <label>公關贈送<input id="prCost" type="number" oninput="debouncedCalc()"/></label>
-    <label>KOL 分潤<input id="kolCost" type="number" oninput="debouncedCalc()"/></label>
-    <label>營運支出<input id="opsCost" type="number" oninput="debouncedCalc()"/></label>
-    <label>淨利 <span id="netProfit" class="net-profit">0</span></label>
-  </section>
-
-  <section class="charts">
-    <canvas id="pie" width="300" height="300"></canvas>
-    <canvas id="line" width="300" height="300"></canvas>
-  </section>
-
+    <section class="charts">
+      <canvas id="pie" width="330" height="300"></canvas>
+      <canvas id="line" width="330" height="300"></canvas>
+    </section>
+  </main>
 </body>
 </html>
