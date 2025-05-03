@@ -1,6 +1,11 @@
-// Firebase 初始化
+/* ---------- 快捷 ---------- */
+const $ = q => document.querySelector(q);
+const $$ = q => document.querySelectorAll(q);
+const id = i => document.getElementById(i);
+
+/* ---------- Firebase 初始化 ---------- */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA_t-Yfmxfy8uAqGgQMb3AZarNrzYocByM",
@@ -11,47 +16,76 @@ const firebaseConfig = {
   appId: "1:632631753622:web:395d077de61b86f9053bb7",
   measurementId: "G-MLN3B4NZ83"
 };
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const entriesRef = collection(db, "finance_entries");
 
-// 快捷
-const $ = q => document.querySelector(q);
-const id = i => document.getElementById(i);
+/* ---------- 顯示數字與更新圖表 ---------- */
+let pie, line, hist = [];
 
-// 新增紀錄
-id("addBtn").onclick = async () => {
-  const type = id("type").value;
-  const amount = +id("amount").value;
-  const note = id("note").value;
-  if (!amount || isNaN(amount)) return alert("請輸入正確金額");
-  await addDoc(entriesRef, {
-    type,
-    amount,
-    note,
-    time: serverTimestamp()
+function updateCharts() {
+  const costs = ["sell", "pr", "kol", "ops"].map(idName => +id(idName).value || 0);
+  const income = +id("income").value || 0;
+  const profit = income - costs.reduce((a, b) => a + b, 0);
+  id("profit").textContent = profit.toFixed(0);
+  id("profit").style.color = profit >= 0 ? "#4caf50" : "#f44336";
+
+  pie?.destroy();
+  pie = new Chart(id("pie"), {
+    type: "pie",
+    data: {
+      labels: ["銷售支出", "公關贈送", "KOL 分潤", "營運支出"],
+      datasets: [{ data: costs, backgroundColor: ["#333", "#555", "#777", "#999"] }]
+    },
+    options: { plugins: { legend: { labels: { color: "#ccc" } } } }
   });
-  id("amount").value = "";
-  id("note").value = "";
-};
 
-// 即時同步
-onSnapshot(entriesRef, snap => {
-  const tbody = id("history");
-  tbody.innerHTML = "";
-  let total = 0;
-  snap.forEach(doc => {
-    const d = doc.data();
-    const tr = document.createElement("tr");
-    const amt = d.type === "income" ? d.amount : -d.amount;
-    total += amt;
-    tr.innerHTML = `
-      <td>${d.type === "income" ? "收入" : "支出"}</td>
-      <td>${d.amount}</td>
-      <td>${d.note || ""}</td>
-    `;
-    tr.style.color = d.type === "income" ? "#3c6" : "#c44";
-    tbody.appendChild(tr);
+  line?.destroy();
+  line = new Chart(id("line"), {
+    type: "line",
+    data: {
+      labels: hist.map(d => d.date),
+      datasets: [{ label: "淨利", data: hist.map(d => d.profit), borderColor: "#fff", backgroundColor: "rgba(255,255,255,0.1)", fill: true, tension: 0.3 }]
+    },
+    options: { scales: { x: { ticks: { color: "#ccc" } }, y: { ticks: { color: "#ccc" } } }, plugins: { legend: { labels: { color: "#ccc" } } } }
   });
-  id("netProfit").textContent = total.toFixed(0);
+}
+
+/* ---------- 載入與儲存 ---------- */
+async function loadData() {
+  const snap = await getDoc(doc(db, "finance", "data"));
+  if (snap.exists()) {
+    const d = snap.data();
+    ["income", "sell", "pr", "kol", "ops"].forEach(k => id(k).value = d[k] || "");
+    updateCharts();
+  }
+
+  onSnapshot(doc(db, "finance", "hist"), snap => {
+    hist = snap.exists() ? snap.data().list || [] : [];
+    updateCharts();
+  });
+}
+
+async function saveData() {
+  const data = Object.fromEntries(["income", "sell", "pr", "kol", "ops"].map(k => [k, id(k).value]));
+  await setDoc(doc(db, "finance", "data"), data);
+  updateCharts();
+}
+
+async function addRecord() {
+  const today = new Date().toLocaleDateString();
+  const profit = +id("income").value - +id("sell").value - +id("pr").value - +id("kol").value - +id("ops").value;
+  hist.push({ date: today, profit });
+  await setDoc(doc(db, "finance", "hist"), { list: hist });
+  updateCharts();
+}
+
+/* ---------- 綁定 ---------- */
+id("saveBtn").onclick = saveData;
+id("addBtn").onclick = addRecord;
+
+["income", "sell", "pr", "kol", "ops"].forEach(idName => {
+  id(idName).oninput = () => updateCharts();
 });
+
+loadData();
