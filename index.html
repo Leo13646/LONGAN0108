@@ -1,37 +1,39 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>財務報表</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css" />
   <script type="module" src="script.js" defer></script>
 </head>
 <body>
-  <header>
-    <h1>財務報表系統</h1>
+  <header class="hero">
+    <h1>LONGAN 財務系統</h1>
     <p class="motto">創業，就是在別人懷疑你時，你還敢繼續相信自己。</p>
   </header>
 
-  <main>
-    <section class="form-grid">
-      <label>資本<input type="number" id="capital"></label>
-      <label>收入<input type="number" id="income" oninput="debouncedCalc()"></label>
-      <label>銷售支出<input type="number" id="sellCost" oninput="debouncedCalc()"></label>
-      <label>公關贈送<input type="number" id="prCost" oninput="debouncedCalc()"></label>
-      <label>KOL 分潤<input type="number" id="kolCost" oninput="debouncedCalc()"></label>
-      <label>營運支出<input type="number" id="opsCost" oninput="debouncedCalc()"></label>
-      <div class="net-profit">
-        <span>淨利：</span><span id="netProfit">0</span>
-      </div>
-    </section>
+  <section class="form">
+    <select id="type">
+      <option value="income">收入</option>
+      <option value="expense">支出</option>
+    </select>
+    <input id="amount" type="number" placeholder="金額" />
+    <input id="note" type="text" placeholder="備註" />
+    <button id="addBtn">新增紀錄</button>
+  </section>
 
-    <section class="charts">
-      <canvas id="pie" width="330" height="300"></canvas>
-      <canvas id="line" width="330" height="300"></canvas>
-    </section>
-  </main>
+  <section class="summary">
+    <p>目前淨利：<span id="netProfit">0</span></p>
+  </section>
+
+  <section class="history">
+    <table>
+      <thead>
+        <tr><th>類別</th><th>金額</th><th>備註</th></tr>
+      </thead>
+      <tbody id="history"></tbody>
+    </table>
+  </section>
 </body>
 </html>
