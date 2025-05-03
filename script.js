@@ -33,11 +33,12 @@ const saveFin=_=>{
 const loadFin=_=>{
   onSnapshot(doc(db, "finance", "fin"), snap=>{
     if(!snap.exists()) return;
-    Object.entries(snap.data()).forEach(([k,v])=>id(k).value=v);
+    Object.entries(snap.data()).forEach(([k,v])=>{
+      if (id(k).value !== String(v)) id(k).value = v;
+    });
     calc();
   });
 };
-
 let pie,line,hist=[];
 const loadHist=_=>{
   onSnapshot(doc(db, "finance", "hist"), snap=>{
