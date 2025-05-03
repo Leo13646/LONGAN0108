@@ -5,7 +5,7 @@ const id = i => document.getElementById(i);
 
 /* ---------- Firebase 初始化 ---------- */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA_t-Yfmxfy8uAqGgQMb3AZarNrzYocByM",
@@ -28,34 +28,43 @@ function show(t) {
   if (t === "stock" && id("stockTable").rows.length === 1) addStockRow();
   if (t === "order" && id("orderTable").rows.length === 1) addOrderRow();
 }
-
 /* ---------- 財務 ---------- */
 const keys = ["capital", "income", "sellCost", "prCost", "kolCost", "opsCost"];
-const saveFin = _ => {
+let pie, line, hist = [];
+let debounceTimer;
+
+const saveFin = () => {
   const data = Object.fromEntries(keys.map(k => [k, id(k).value]));
   setDoc(doc(db, "finance", "fin"), data);
 };
 
-const loadFin = _ => {
+const loadFin = () => {
   onSnapshot(doc(db, "finance", "fin"), snap => {
     if (!snap.exists()) return;
-    Object.entries(snap.data()).forEach(([k, v]) => id(k).value = v);
-    calc();
+    const data = snap.data();
+    keys.forEach(k => {
+      if (document.activeElement !== id(k)) {
+        id(k).value = data[k] || "";
+      }
+    });
+    updateCharts();
   });
 };
 
-let pie, line, hist = [];
-const loadHist = _ => {
+const saveHist = () => setDoc(doc(db, "finance", "hist"), { rows: hist });
+
+const loadHist = () => {
   onSnapshot(doc(db, "finance", "hist"), snap => {
     hist = snap.exists() ? snap.data().rows || [] : [];
-    rebuildCharts();
+    updateCharts();
   });
 };
-const saveHist = _ => setDoc(doc(db, "finance", "hist"), { rows: hist });
 
-function rebuildCharts() {
+function updateCharts() {
   const n = k => +id(k).value || 0;
-  const p = n("income") - n("sellCost") - n("prCost") - n("kolCost") - n("opsCost");
+  const profit = n("income") - n("sellCost") - n("prCost") - n("kolCost") - n("opsCost");
+
+  id("netProfit").textContent = profit.toFixed(0);
 
   pie?.destroy();
   pie = new Chart(id("pie"), {
@@ -69,7 +78,7 @@ function rebuildCharts() {
 
   const today = new Date().toLocaleDateString();
   if (!hist.length || hist.at(-1).x !== today) {
-    hist.push({ x: today, y: p });
+    hist.push({ x: today, y: profit });
     saveHist();
   }
 
@@ -78,29 +87,33 @@ function rebuildCharts() {
     type: "line",
     data: {
       labels: hist.map(d => d.x),
-      datasets: [{ label: "淨利", data: hist.map(d => d.y), borderColor: "#fff", backgroundColor: "rgba(255,255,255,.15)", fill: true, tension: .35 }]
+      datasets: [{
+        label: "淨利", data: hist.map(d => d.y),
+        borderColor: "#fff", backgroundColor: "rgba(255,255,255,0.2)", fill: true, tension: .35
+      }]
     },
     options: { animation: false, scales: { x: { ticks: { color: "#bbb" } }, y: { ticks: { color: "#bbb" } } }, plugins: { legend: { labels: { color: "#ccc" } } } }
   });
-
-  id("netProfit").textContent = p.toFixed(0);
 }
 
-let t;
 function debouncedCalc() {
-  clearTimeout(t);
-  t = setTimeout(() => { saveFin(); rebuildCharts(); }, 300);
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    saveFin();
+    updateCharts();
+  }, 500);
 }
-
-/* ---------- 表格儲存 ---------- */
+/* ---------- 共用表格存取 ---------- */
 const saveTable = (key, tableId) => {
-  const rows = [...id(tableId).rows].slice(1).map(r => [...r.querySelectorAll("input,select")].map(e => e.value));
+  const rows = [...id(tableId).rows].slice(1).map(r =>
+    [...r.querySelectorAll("input,select")].map(e => e.value)
+  );
   setDoc(doc(db, "tables", key), { rows });
 };
 
 const loadTable = (key, addRow, tableId) => {
   onSnapshot(doc(db, "tables", key), snap => {
-    const data = snap.exists() ? snap.data().rows : [];
+    const data = snap.exists() ? snap.data().rows || [] : [];
     while (id(tableId).rows.length > 1) id(tableId).deleteRow(1);
     if (data.length === 0) addRow();
     else data.forEach(addRow);
@@ -109,8 +122,8 @@ const loadTable = (key, addRow, tableId) => {
 
 /* ---------- KOL ---------- */
 function addKolRow(d = null) {
-  const st = ["未寄出", "已寄出"];
   const r = id("kolTable").insertRow();
+  const st = ["未寄出", "已寄出"];
   for (let i = 0; i < 8; i++) {
     const c = r.insertCell();
     let el;
@@ -161,12 +174,11 @@ function addStockRow(d = null) {
 function sumStock() {
   $$("#stockTable tr").forEach((r, i) => {
     if (!i) return;
-    const cost = +r.cells[2].firstChild.value || 0,
-          qty = +r.cells[3].firstChild.value || 0;
+    const cost = +r.cells[2].firstChild.value || 0;
+    const qty = +r.cells[3].firstChild.value || 0;
     r.cells[4].firstChild.value = (cost * qty).toFixed(0);
   });
 }
-
 /* ---------- ORDER ---------- */
 function addOrderRow(d = null) {
   const st = ["未出貨", "已出貨", "退貨"];
@@ -188,8 +200,7 @@ function addOrderRow(d = null) {
 
 /* ---------- 啟動 ---------- */
 window.addEventListener("DOMContentLoaded", () => {
-  loadFin();
-  loadHist();
+  loadFin(); loadHist();
   loadTable("kol", addKolRow, "kolTable");
   loadTable("stock", addStockRow, "stockTable");
   loadTable("order", addOrderRow, "orderTable");
@@ -197,9 +208,25 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ---------- 小元件 ---------- */
-const input = (n = false, v = "") => { const e = document.createElement("input"); if (n) e.type = "number"; e.value = v; return e; };
-const sel = a => { const s = document.createElement("select"); a.forEach(o => s.add(new Option(o, o))); return s; };
-const btn = f => { const b = document.createElement("button"); b.textContent = "🗑"; b.onclick = f; return b; };
+const input = (n = false, v = "") => {
+  const e = document.createElement("input");
+  if (n) e.type = "number";
+  e.value = v;
+  return e;
+};
+
+const sel = a => {
+  const s = document.createElement("select");
+  a.forEach(o => s.add(new Option(o, o)));
+  return s;
+};
+
+const btn = f => {
+  const b = document.createElement("button");
+  b.textContent = "🗑";
+  b.onclick = f;
+  return b;
+};
 
 /* ---------- 公開給 HTML 使用 ---------- */
 window.show = show;
