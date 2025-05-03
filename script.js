@@ -1,6 +1,5 @@
-// Firebase 初始化
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA_t-Yfmxfy8uAqGgQMb3AZarNrzYocByM",
@@ -14,54 +13,37 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const recordsRef = collection(db, "records");
 
-const form = document.getElementById("recordForm");
-const list = document.getElementById("historyList");
-const netProfit = document.getElementById("netProfit");
+const typeInput = document.getElementById("type");
+const amountInput = document.getElementById("amount");
+const dateInput = document.getElementById("date");
+const addBtn = document.getElementById("addRecord");
+const historyTable = document.getElementById("historyTable");
+const netProfitSpan = document.getElementById("netProfit");
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const type = form.type.value;
-  const amount = parseFloat(form.amount.value);
-  const date = form.date.value;
-  if (!type || !amount || !date) return alert("請填寫完整欄位");
+addBtn.onclick = async () => {
+  const type = typeInput.value.trim();
+  const amount = parseFloat(amountInput.value);
+  const date = dateInput.value;
 
-  await addDoc(collection(db, "records"), {
-    type,
-    amount,
-    date,
-    createdAt: serverTimestamp()
-  });
-  form.reset();
-});
+  if (!type || isNaN(amount) || !date) return alert("請輸入所有欄位");
 
-function render(data) {
-  list.innerHTML = "";
+  await addDoc(recordsRef, { type, amount, date });
+  typeInput.value = "";
+  amountInput.value = "";
+  dateInput.value = "";
+};
+
+onSnapshot(recordsRef, snap => {
+  const rows = [];
   let total = 0;
-  data.forEach(docSnap => {
-    const r = docSnap.data();
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <span>${r.date}</span>
-      <span>${r.type}</span>
-      <span>${r.amount}</span>
-      <button data-id="${docSnap.id}" class="del">🗑</button>
-    `;
-    list.appendChild(li);
-    total += (r.type === "收入" ? r.amount : -r.amount);
+  snap.forEach(doc => {
+    const { type, amount, date } = doc.data();
+    total += amount;
+    rows.push(`<tr><td>${type}</td><td>${amount}</td><td>${date}</td></tr>`);
   });
-  netProfit.textContent = total;
-  netProfit.style.color = total >= 0 ? "#0f0" : "#f44";
-}
-
-onSnapshot(collection(db, "records"), (snap) => {
-  const docs = snap.docs.sort((a,b)=> (a.data().date || "") > (b.data().date || "") ? 1 : -1);
-  render(docs);
-});
-
-list.addEventListener("click", async (e) => {
-  if (e.target.classList.contains("del")) {
-    const id = e.target.dataset.id;
-    await deleteDoc(doc(db, "records", id));
-  }
+  historyTable.innerHTML = rows.join("");
+  netProfitSpan.textContent = total.toFixed(0);
+  netProfitSpan.className = total >= 0 ? "positive" : "negative";
 });
