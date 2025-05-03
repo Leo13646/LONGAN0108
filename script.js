@@ -20,37 +20,39 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ---------- 分頁切換 ---------- */
-function show(t) {
+/* ---------- 分頁 ---------- */
+function show(tab) {
   $$(".tab").forEach(e => e.style.display = "none");
-  id(t).style.display = "block";
-  if (t === "kol" && id("kolTable").rows.length === 1) addKolRow();
-  if (t === "stock" && id("stockTable").rows.length === 1) addStockRow();
-  if (t === "order" && id("orderTable").rows.length === 1) addOrderRow();
+  id(tab).style.display = "block";
+  if (tab === "kol" && id("kolTable").rows.length === 1) addKolRow();
+  if (tab === "stock" && id("stockTable").rows.length === 1) addStockRow();
+  if (tab === "order" && id("orderTable").rows.length === 1) addOrderRow();
 }
 
 /* ---------- 財務 ---------- */
-const keys = ["capital", "income", "sellCost", "prCost", "kolCost", "opsCost"];
-const saveFin = () => {
-  const data = Object.fromEntries(keys.map(k => [k, id(k).value]));
-  setDoc(doc(db, "finance", "fin"), data);
-};
-const loadFin = () => {
+const finKeys = ["capital", "income", "sellCost", "prCost", "kolCost", "opsCost"];
+function saveFin() {
+  const data = Object.fromEntries(finKeys.map(k => [k, id(k).value]));
+  setDoc(doc(db, "finance", "fin"), data).catch(console.error);
+}
+function loadFin() {
   onSnapshot(doc(db, "finance", "fin"), snap => {
     if (!snap.exists()) return;
     Object.entries(snap.data()).forEach(([k, v]) => id(k).value = v);
     calc();
   });
-};
+}
 
 let pie, line, hist = [];
-const loadHist = () => {
+function loadHist() {
   onSnapshot(doc(db, "finance", "hist"), snap => {
-    hist = snap.exists() ? snap.data().rows || [] : [];
+    hist = snap.exists() ? snap.data().rows : [];
     rebuildCharts();
   });
-};
-const saveHist = () => setDoc(doc(db, "finance", "hist"), { rows: hist });
+}
+function saveHist() {
+  setDoc(doc(db, "finance", "hist"), { rows: hist }).catch(console.error);
+}
 
 function rebuildCharts() {
   const n = k => +id(k).value || 0;
@@ -91,29 +93,34 @@ function debouncedCalc() {
   t = setTimeout(() => { saveFin(); rebuildCharts(); }, 300);
 }
 
-/* ---------- 通用表格存取 ---------- */
-const saveTable = (key, tableId) => {
+/* ---------- 表格儲存 ---------- */
+function saveTable(key, tableId) {
   const rows = [...id(tableId).rows].slice(1).map(r => [...r.querySelectorAll("input,select")].map(e => e.value));
-  setDoc(doc(db, "tables", key), { rows });
-};
-const loadTable = (key, addRow, tableId) => {
+  setDoc(doc(db, "tables", key), { rows }).catch(console.error);
+}
+
+function loadTable(key, addRow, tableId) {
   onSnapshot(doc(db, "tables", key), snap => {
     const data = snap.exists() ? snap.data().rows : [];
     while (id(tableId).rows.length > 1) id(tableId).deleteRow(1);
-    if (data.length === 0) { addRow(); saveTable(key, tableId); }
-    else data.forEach(addRow);
+    if (data.length === 0) {
+      addRow();
+      saveTable(key, tableId);
+    } else {
+      data.forEach(addRow);
+    }
   });
-};
+}
 
-/* ---------- 各模組 ---------- */
+/* ---------- 模組欄位 ---------- */
 function addKolRow(d = null) {
-  const st = ["未寄出", "已寄出"];
   const r = id("kolTable").insertRow();
+  const status = ["未寄出", "已寄出"];
   for (let i = 0; i < 8; i++) {
     const c = r.insertCell();
     let el = i === 7 ? btn(() => { r.remove(); sumKOL(); saveTable("kol", "kolTable"); })
-           : i === 6 ? sel(st)
-           : input([2, 3, 4, 5].includes(i), i === 4 ? 30 : "");
+           : i === 6 ? sel(status)
+           : input([2,3,4,5].includes(i), i === 4 ? 30 : "");
     c.appendChild(el);
   }
   if (d) [...r.cells].forEach((c, i) => c.firstChild.value = d[i] || "");
@@ -135,18 +142,15 @@ function sumKOL() {
 }
 
 function addStockRow(d = null) {
-  const cat = ["電子產品", "美妝", "居家", "服飾", "3C配件", "其他"];
   const r = id("stockTable").insertRow();
+  const cat = ["電子產品", "美妝", "居家", "服飾", "3C配件", "其他"];
   for (let i = 0; i < 8; i++) {
     const c = r.insertCell();
-    let el;
-    if (i === 7) el = btn(() => { r.remove(); sumStock(); saveTable("stock", "stockTable"); });
-    else if (i === 1) el = sel(cat);
-    else {
-      el = input([2, 3, 5].includes(i));
-      if ([2, 3].includes(i)) el.oninput = () => sumStock();
-      if (i === 4) el.readOnly = true;
-    }
+    let el = i === 7 ? btn(() => { r.remove(); sumStock(); saveTable("stock", "stockTable"); })
+           : i === 1 ? sel(cat)
+           : input([2,3,5].includes(i));
+    if (i === 4) el.readOnly = true;
+    if ([2,3].includes(i)) el.oninput = () => sumStock();
     c.appendChild(el);
   }
   if (d) [...r.cells].forEach((c, i) => c.firstChild.value = d[i] || "");
@@ -164,13 +168,13 @@ function sumStock() {
 }
 
 function addOrderRow(d = null) {
-  const st = ["未出貨", "已出貨", "退貨"];
   const r = id("orderTable").insertRow();
+  const status = ["未出貨", "已出貨", "退貨"];
   for (let i = 0; i < 7; i++) {
     const c = r.insertCell();
     let el = i === 6 ? btn(() => { r.remove(); saveTable("order", "orderTable"); })
            : i === 2 ? input(true, 1)
-           : i === 4 ? sel(st)
+           : i === 4 ? sel(status)
            : i === 5 ? (() => { const e = input(false, new Date().toISOString().split("T")[0]); e.type = "date"; return e; })()
            : input(i === 3);
     c.appendChild(el);
@@ -180,7 +184,7 @@ function addOrderRow(d = null) {
   r.addEventListener("change", () => saveTable("order", "orderTable"));
 }
 
-/* ---------- 初始化 ---------- */
+/* ---------- 啟動 ---------- */
 window.addEventListener("DOMContentLoaded", () => {
   loadFin(); loadHist();
   loadTable("kol", addKolRow, "kolTable");
@@ -189,12 +193,11 @@ window.addEventListener("DOMContentLoaded", () => {
   show("finance");
 });
 
-/* ---------- 小工具 ---------- */
-const input = (n = false, v = "") => { const e = document.createElement("input"); if (n) e.type = "number"; e.value = v; return e; };
-const sel = a => { const s = document.createElement("select"); a.forEach(o => s.add(new Option(o, o))); return s; };
+/* ---------- 工具 ---------- */
+const input = (isNum = false, val = "") => { const e = document.createElement("input"); if (isNum) e.type = "number"; e.value = val; return e; };
+const sel = arr => { const s = document.createElement("select"); arr.forEach(opt => s.add(new Option(opt, opt))); return s; };
 const btn = f => { const b = document.createElement("button"); b.textContent = "🗑"; b.onclick = f; return b; };
 
-/* ---------- 對外開放函數 ---------- */
 window.show = show;
 window.addKolRow = addKolRow;
 window.addStockRow = addStockRow;
