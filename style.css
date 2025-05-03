@@ -1,38 +1,139 @@
-:root{
-  --bg:#0f0f0f;
-  --card:#1b1b1b;
-  --alt:#262626;
-  --txt:#f5f5f5;
-  --sub:#9a9a9a;
-  --radius:12px;
-  --shadow:0 4px 10px rgba(0,0,0,.6);
-  --font:"Roboto","Noto Sans TC",sans-serif;
+/* 基本設定 */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Noto Sans TC', 'Roboto', sans-serif;
+  background-color: #111;
+  color: #f0f0f0;
 }
-*{box-sizing:border-box;font-family:var(--font);-webkit-font-smoothing:antialiased}
-body{margin:0;background:var(--bg);color:var(--txt)}
 
-/* Logo + Motto */
-.hero{display:flex;flex-direction:column;align-items:center;gap:12px;padding:28px 6vw;background:#141414;box-shadow:var(--shadow)}
-.logo{width:72px;height:72px;fill:none;color:#fff}
-.motto{margin:0;font-size:17px;font-weight:600;text-align:center;max-width:420px}
+header {
+  text-align: center;
+  padding: 2rem 1rem;
+}
 
-/* 導覽 */
-nav{display:flex;gap:10px;padding:14px 6vw;background:#141414;position:sticky;top:0;z-index:10}
-nav button{flex:1;padding:10px 0;border:none;border-radius:var(--radius);background:var(--card);color:var(--txt);font-weight:600;cursor:pointer}
-nav button:hover{background:#2c2c2c}
-.tab{display:none;padding:28px 6vw 48px}
-.tab>button{margin-bottom:18px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px 22px;margin-bottom:36px}
-label{display:flex;flex-direction:column;font-size:15px}
-input,select{margin-top:4px;padding:10px 12px;font-size:14px;border:none;border-radius:var(--radius);background:var(--card);color:var(--txt)}
-button{padding:8px 22px;border:none;border-radius:var(--radius);background:#3c3c3c;color:#fff;font-weight:600;cursor:pointer;box-shadow:var(--shadow)}
-button:hover{filter:brightness(1.15)}
-table{width:100%;border-collapse:separate;border-spacing:0;background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
-th,td{padding:10px 8px;text-align:center;font-size:14px}
-th{background:#151515;color:var(--sub);font-weight:500}
-tr:nth-child(even) td{background:var(--alt)}
-input[type=number]{text-align:right}
-td button{padding:6px 10px;font-size:14px;background:#d33;border:none;border-radius:8px;color:#fff}
-td button:hover{filter:brightness(1.1)}
-.charts{display:flex;flex-wrap:wrap;gap:24px;justify-content:center}
-.charts canvas{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+header .logo {
+  width: 80px;
+  height: 80px;
+  color: white;
+  margin-bottom: 1rem;
+}
+
+header .motto {
+  font-size: 1.2rem;
+  color: #ccc;
+  font-style: italic;
+}
+
+nav {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  background: #222;
+  padding: 1rem 0;
+}
+
+nav button {
+  background: #333;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+
+nav button:hover {
+  background: #555;
+}
+
+.tab {
+  display: none;
+  padding: 2rem;
+  max-width: 900px;
+  margin: auto;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+  color: #ddd;
+}
+
+input[type="number"] {
+  background: #1e1e1e;
+  color: #fff;
+  border: 1px solid #555;
+  border-radius: 5px;
+  padding: 0.5rem;
+  margin-top: 0.2rem;
+}
+
+canvas {
+  background: #222;
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 0 10px #0005;
+}
+
+.charts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  margin-top: 2rem;
+  justify-content: center;
+}
+
+/* 財務變色文字 */
+#netProfit {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #ccc;
+}
+
+/* 資料表格樣式 */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+th, td {
+  padding: 0.75rem;
+  border: 1px solid #444;
+  text-align: center;
+}
+
+th {
+  background: #222;
+  font-weight: 600;
+}
+
+tr:nth-child(even) {
+  background: #181818;
+}
+
+tr:hover {
+  background: #2a2a2a;
+}
+
+button {
+  background: #444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #666;
+}
